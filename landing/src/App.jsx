@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Header from "./components/Header.jsx";
 import Hero from "./components/Hero.jsx";
 import Footer from "./components/Footer.jsx";
@@ -18,6 +18,13 @@ const scrollTo = (id) =>
     });
 export default function App() {
   const loginDialog = useRef(null);
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const id = window.location.hash.slice(1);
+      if (id) document.getElementById(id)?.scrollIntoView({ behavior: "instant" });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const goContact = () => scrollTo("contact");
   const goLogin = () => {
     const appUrl = import.meta.env.VITE_APP_URL;
@@ -30,7 +37,10 @@ export default function App() {
         본문으로 건너뛰기
       </a>
       <Header
-        goTop={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        goTop={() => {
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          window.scrollTo({ top: 0, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
+        }}
         goContact={goContact}
         goLogin={goLogin}
       />

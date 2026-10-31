@@ -1,6 +1,6 @@
 # SenseSpace P1 — DB 스키마 명세서
 
-> 006 후속 구현: employees.temporary_seat_id, employee_statuses.away_reason_text, 내부 통합 점유 테이블 private.seat_claims를 추가한다. 기본/자유 사유는 상호 배제하고 이동·복귀·실제 출근 시 감각은 모두 NULL이다. [006 SQL](./006_seat_movement.sql)과 [동작·API 계약](./자리이동_복귀_API.md)이 아래 초기 P1 설명보다 우선한다. 로컬 검증 완료, Supabase 적용 전이다.
+> 006 후속 구현: employees.temporary_seat_id, employee_statuses.away_reason_text, 내부 통합 점유 테이블 private.seat_claims를 추가한다. 기본/자유 사유는 상호 배제하고 이동·복귀·실제 출근 시 감각은 모두 NULL이다. [006 SQL](./006_seat_movement.sql)과 [동작·API 계약](./자리이동_복귀_API.md)이 아래 초기 P1 설명보다 우선한다. 로컬 검증 완료이며 사용자가 Supabase 적용·설치 확인 성공을 확인했다. 실제 직원 세션과 FE 통합 검증은 남아 있다.
 
 > 2026-11-01 후속 확장: 004에서 메시지를 20자로 제한하고 독립 이모티콘·캐릭터·팀·알림을 추가한다. 005는 실제 FE 항목 52개를 등록한다. 기존 감각은 6개를 유지하며 조명을 추가하지 않는다. AI 생성은 사용자 요청으로 보류한다. 001은 이전 설치 이력으로 보존한다.
 

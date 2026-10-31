@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
+import Footer from './components/Footer.jsx';
 import Contact from './components/Contact.jsx';
 import Process from './components/Process.jsx';
 import Features from './components/Features.jsx';
@@ -27,6 +28,7 @@ export default function App() {
       <Process />
       <Contact />
     </main>
+    <Footer goContact={goContact} goLogin={goLogin} />
     <dialog ref={loginDialog} className="login-dialog" aria-labelledby="login-title">
       <h2 id="login-title">조직 로그인 안내</h2>
       <p>조직에서 안내받은 Senspace 주소로 로그인해 주세요.<br />로그인 주소는 도입 담당자에게 문의하실 수 있어요.</p>

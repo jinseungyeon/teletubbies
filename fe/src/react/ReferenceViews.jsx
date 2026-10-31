@@ -8,6 +8,24 @@ const Base = window.__SenspaceComponent;
 class ReferenceView extends Base {}
 
 export class MapView extends ReferenceView {
+  // React attaches wheel handlers passively, so the map's own preventDefault
+  // cannot stop the browser's page zoom. Keep wheel events inside the map: it
+  // already uses them for its camera, and in the old iframe they never reached
+  // the host page.
+  componentDidMount() {
+    super.componentDidMount();
+    const el = this.mapRef.current;
+    if (!el) return;
+    this._wheelEl = el;
+    this._wheelGuard = event => { if (event.cancelable) event.preventDefault(); };
+    el.addEventListener('wheel', this._wheelGuard, { passive: false });
+  }
+
+  componentWillUnmount() {
+    if (this._wheelEl) this._wheelEl.removeEventListener('wheel', this._wheelGuard);
+    super.componentWillUnmount();
+  }
+
   render() {
     const v = this.renderVals();
     return (

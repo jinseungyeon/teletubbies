@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { avatar } from '../map.js';
+import { PixelS } from './Shared.jsx';
 
 export default function AuthPage({ signup, api, onDone, onNavigate, onDemo }) {
   const [error, setError] = useState('');
@@ -29,7 +30,7 @@ export default function AuthPage({ signup, api, onDone, onNavigate, onDemo }) {
     <main className="reference-auth">
       <section className="reference-auth-card">
         <div className="reference-auth-hero">
-          <span className="reference-wordmark">SENSPACE<span>✦</span></span>
+          <span className="reference-wordmark"><span className="rw-mark"><PixelS size={16} /></span>SENSPACE</span>
           <span className="reference-auth-person" dangerouslySetInnerHTML={{ __html: avatar(0, 54) }} />
           <span className="reference-auth-person second" dangerouslySetInnerHTML={{ __html: avatar(3, 54) }} />
           <img src="/src/assets/furniture/workdesk.png" alt="" />

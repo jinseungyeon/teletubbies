@@ -173,7 +173,7 @@ export default function ProfilePage({ api, me, people, onboarding, profileStash,
               ? <button type="button" className="secondary" onClick={() => setStep(1)}>이전 단계</button>
               : !onboarding
                 ? <button type="button" className="text-button" onClick={onLogout}>로그아웃</button>
-                : <span>작은 배려의 시작, Sensory Fit</span>}
+                : <span>작은 배려의 시작, SENSPACE</span>}
             <button type="submit" className="primary">
               {onboarding ? (step === 1 ? '다음: 나의 감각 소개' : '우리 사무실 들어가기') : '변경 사항 저장'} <Icon name="arrow" size={18} />
             </button>

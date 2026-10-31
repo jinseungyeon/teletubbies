@@ -14,7 +14,7 @@ async function setup({login=true}={}){
   const app=new context.App();return{app,context,memory,storage};
 }
 test('v2 uses exact reference seats and opens a small profile before the sensory card',async()=>{
-  const {app,context}=await setup();assert.equal(context.seats.length,48);
+  const {app,context}=await setup();assert.equal(context.seats.filter(s=>s.floor===1).length,48);assert.equal(context.seats.filter(s=>s.floor===2).length,93);
   let v=app.renderVals();assert.equal(v.showSpace,true);assert.equal(v.hasPop,false);
   v.mapPeople[1].onClick();v=app.renderVals();assert.equal(v.hasPop,true);assert.equal(v.pop.name,'최민수');
   v.pop.openCard();v=app.renderVals();assert.equal(v.showCard,true);assert.equal(v.card.name,'최민수');assert.equal(v.hasPop,false);

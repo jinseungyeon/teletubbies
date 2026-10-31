@@ -1,13 +1,17 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { COMPANY, FLOORS, MAP_SIZE, SEATS, SENSITIVITY, TRAITS } from '../data.js';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { COMPANY, FLOORS, seatsOfFloor, SENSITIVITY, TRAITS } from '../data.js';
+import floor2f from '../assets/floor-2f.png';
 import { SKINS } from '../character.js';
-import { avatar, officeSVG } from '../map.js';
+import { avatar } from '../map.js';
 import { Brand, Raw, Icon } from './Shared.jsx';
+import { MapBase } from './ReferenceViews.jsx';
 import { isDemoMode } from '../api.js';
 import { look } from './helpers.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
-const seatPos = (seat, dy = 28) => ({ left: `${seat.x / MAP_SIZE.width * 100}%`, top: `${(seat.y + dy) / MAP_SIZE.height * 100}%` });
+// 지도(1400×800) 좌표를 좌석 맵 박스 안의 퍼센트 위치로 바꾼다. 1·2층 모두 같은 지도 좌표를 쓴다.
+const F1_MAP = { width: 1400, height: 800 };
+const seatPosMap = seat => ({ left: `${seat.x / F1_MAP.width * 100}%`, top: `${seat.y / F1_MAP.height * 100}%` });
 const SENSI_COLORS = ['#7b94bb', '#cd8294', '#79a78a'];
 
 function ChoiceRow({ name, label, icon, labels, value, color, onChange }) {
@@ -34,6 +38,18 @@ export default function ProfilePage({ api, me, people, onboarding, profileStash,
   const [draft, setDraft] = useState(initial);
   const [step, setStep] = useState(1);
   const [error, setError] = useState('');
+  // 1층 도면은 1400×800 지도 좌표라서, 박스 너비에 맞춰 줄여서 그린다.
+  const [mapScale, setMapScale] = useState(0.4);
+  const floor1Box = useRef(null);
+  useEffect(() => {
+    const el = floor1Box.current;
+    if (!el) return;
+    const fit = () => setMapScale(el.clientWidth / F1_MAP.width);
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [step, draft.floor]);
 
   useEffect(() => { onConsumeStash(); }, []);
 
@@ -110,9 +126,17 @@ export default function ProfilePage({ api, me, people, onboarding, profileStash,
                     </select>
                   </div>
                   <div id="seat-map">
-                    <div className="seat-map-art">
-                      <Raw html={officeSVG()} />
-                      {SEATS.map(s => {
+                    <div className={`seat-map-art ${Number(draft.floor) === 2 ? 'floor-2' : ''}`}>
+                      {Number(draft.floor) === 2
+                        ? <img src={floor2f} alt="" style={{ display: 'block', width: '100%' }} />
+                        : (
+                          <div ref={floor1Box} style={{ position: 'relative', width: '100%', aspectRatio: '1400 / 800', overflow: 'hidden' }}>
+                            <div style={{ position: 'absolute', left: 0, top: 0, width: F1_MAP.width, height: F1_MAP.height, transform: `scale(${mapScale})`, transformOrigin: '0 0' }}>
+                              <MapBase floor={1} />
+                            </div>
+                          </div>
+                        )}
+                      {seatsOfFloor(draft.floor).map(s => {
                         const taken = people.some(p => p.id !== me.id && p.floor === Number(draft.floor) && p.seat === s.id);
                         const chosen = draft.seat === s.id;
                         return (
@@ -120,7 +144,7 @@ export default function ProfilePage({ api, me, people, onboarding, profileStash,
                             key={s.id}
                             type="button"
                             className={`seat-choice ${chosen ? 'chosen' : ''}`}
-                            style={seatPos(s)}
+                            style={seatPosMap(s)}
                             disabled={taken}
                             aria-label={`${s.id} ${taken ? '사용 중' : '선택 가능'}`}
                             aria-pressed={chosen}

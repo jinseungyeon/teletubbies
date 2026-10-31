@@ -5,9 +5,12 @@ import { SESSION } from '../session.js';
 import { MapView, MiniView, SettingsView, EditorView } from './ReferenceViews.jsx';
 import { Brand, Icon, FaceAvatar } from './Shared.jsx';
 import SenseCard from './SenseCard.jsx';
-import { FLOOR_TEAMS, statusInfo } from './helpers.js';
+import { statusInfo } from './helpers.js';
 
 const FLOOR_LIST = () => FLOORS.slice().sort((a, b) => b - a);
+const FLOOR_TABS = () => FLOORS.slice().sort((a, b) => a - b);
+const FLOOR_LABEL = { 1: { label: '1F 개발본부', short: '1F' }, 2: { label: '2F 발표실', short: '2F' } };
+const floorLabel = f => FLOOR_LABEL[f] || { label: `${f}F`, short: `${f}F` };
 const JOB_OPTIONS = ['프로덕트 디자이너', 'UX 리서처', '그래픽 디자이너', 'UI 디자이너', 'BX 디자이너'];
 const RANK_OPTIONS = ['팀원', '파트 리드', '팀장', '인턴'];
 
@@ -257,12 +260,17 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
     <div className="hub">
       <header className="hub-top">
         <Brand onNavigate={navigate} />
-        <label className="hub-pill hub-floor">
-          <span className="sr-only">사무실 층</span>
-          <select id="floor" value={floor} onChange={e => { setFloor(Number(e.target.value)); setMenuOpen(false); }}>
-            {FLOOR_LIST().map(f => <option key={f} value={f}>{FLOOR_TEAMS[f] ? `${f}층 · ${FLOOR_TEAMS[f]}` : `${f}층`}</option>)}
-          </select>
-        </label>
+        <div className="hub-pill hub-floor" style={{ height: 38, gap: 10, padding: '0 14px 0 4px', borderRadius: 11, background: '#fff', border: '1.5px solid #e2d6c2', boxShadow: 'inset 0 -2px 0 #efe6d5', fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }} role="group" aria-label="사무실 층">
+          <span style={{ display: 'flex', gap: 2, background: '#efe6d5', borderRadius: 9, padding: 2 }}>
+            {FLOOR_TABS().map(f => (
+              <button key={f} type="button" onClick={() => { setFloor(f); setMenuOpen(false); }} aria-pressed={floor === f}
+                style={{ height: 28, minWidth: 40, padding: '0 10px', border: 'none', borderRadius: 7, cursor: 'pointer', font: '12px Galmuri11', background: floor === f ? '#2b2d55' : 'transparent', color: floor === f ? '#fff' : '#6e6a84', boxShadow: floor === f ? 'inset 0 -2px 0 #17183a' : 'none' }}>
+                {floorLabel(f).short}
+              </button>
+            ))}
+          </span>
+          {COMPANY} › {floorLabel(floor).label}
+        </div>
         <div className="hub-pill hub-counts" id="hub-counts" aria-label="근무 현황">
           {[['all', '전체'], ['working', '출근'], ['away', '자리 비움'], ['offline', '퇴근']].map(([key, label]) => {
             const group = key === 'all' ? people : people.filter(u => u.status === key);

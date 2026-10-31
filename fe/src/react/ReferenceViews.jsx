@@ -1,4 +1,5 @@
 import React from 'react';
+import floor2f from '../assets/floor-2f.png';
 
 // The map/editor/settings surfaces are the reference app's own components. They
 // already own the camera, team rectangle, seat picker, character draft and
@@ -9,7 +10,10 @@ class ReferenceView extends Base {}
 
 // The floor itself, shared by the main map and the sensory minimap so both
 // always show the same room layout.
-function MapBase() {
+export function MapBase({ floor }) {
+  if (floor === 2) {
+    return <img src={floor2f} alt="" style={{ position: 'absolute', left: 0, top: 25, width: 1400, height: 750, imageRendering: 'pixelated', pointerEvents: 'none' }} />;
+  }
   return (
     <>
       <div style={{ position: 'absolute', left: 344, top: 100, width: 984, height: 644, background: "url('/src/assets/tiles/marble.png') 0 0/128px 128px", imageRendering: 'pixelated' }} />
@@ -58,8 +62,8 @@ export class MapView extends ReferenceView {
           onWheel={v.vpWheel}
         >
           <div style={v.layerStyle}>
-            <MapBase />
-            {this.props.floor === 3 && (
+            <MapBase floor={this.props.floor} />
+            {this.props.floor === 1 && (
               <div style={{ position: 'absolute', left: 78, top: 430, width: 40, height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 720, pointerEvents: 'none' }}>
                 <span style={{ writingMode: 'vertical-rl', font: '700 13px Pretendard', color: '#4a2e1a', letterSpacing: 2 }}>정보데스크 · front desk</span>
               </div>
@@ -275,7 +279,7 @@ export class MiniView extends ReferenceView {
     return (
       <div ref={this.boxRef} className="hub-mini-frame" style={{ position: 'relative', aspectRatio: '1400/800', background: '#262848' }}>
         <div style={{ position: 'absolute', left: 0, top: 0, width: 1400, height: 800, transform: `scale(${scale})`, transformOrigin: '0 0' }}>
-          <MapBase />
+          <MapBase floor={this.props.floor} />
           {v.furniture.map((f, i) => <img key={i} src={f.src} style={f.style} alt="" />)}
         </div>
         {v.miniHeat.map((mh, i) => <div key={`mh-${i}`} style={mh.style} />)}

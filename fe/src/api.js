@@ -423,7 +423,8 @@ function createSupabaseAdapter() {
 
     async demo() {
       setDemo(true);
-      setCompanyFloors([2, 3]);
+      setCompanyFloors([1, 2]);
+      setCompanyName('InThon 컴퍼니');
       clearSeatMap();
       cached = null;
       const local = createAdapter(shelf());
@@ -565,8 +566,8 @@ export function createApi() {
   const local = createAdapter(shelf());
   const remote = createSupabaseAdapter();
   const useLocal = () => isDemo();
-  // The demo office is laid out over floors 2 and 3; a real login replaces them.
-  if (isDemo()) setCompanyFloors([2, 3]);
+  // The demo office is laid out over floors 1 and 2; a real login replaces them.
+  if (isDemo()) { setCompanyFloors([1, 2]); setCompanyName('InThon 컴퍼니'); }
 
   return {
     me: () => (useLocal() ? local.me() : remote.me()),
@@ -577,6 +578,9 @@ export function createApi() {
       // always leaves demo mode.
       if (/^demo-/i.test(String(token || ''))) {
         setDemo(true);
+        // A first visit through a demo link never ran the load-time setup above.
+        setCompanyFloors([1, 2]);
+        setCompanyName('InThon 컴퍼니');
         const user = await local.enter(token);
         // Entering the office starts the workday right away.
         try { await local.status('working'); } catch { /* entry must still succeed */ }

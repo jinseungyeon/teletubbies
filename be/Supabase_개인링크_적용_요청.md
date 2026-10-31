@@ -8,6 +8,8 @@
   - `issue_employee_link`를 anon 키로 호출하면 `permission denied for function issue_employee_link` → service_role 전용으로 잘 막혀 있음.
   - `redeem_employee_link`를 anon 키로 호출하면 `{"error_code":"LINK_INVALID"}` → 정상 동작.
 - **익명 로그인이 아직 꺼져 있습니다.** `/auth/v1/settings` 응답이 `external.anonymous_users: false`입니다. 이 설정만 켜지면 링크 입장이 됩니다. (아래 2-1)
+  - 2026-11-01 재확인: 여전히 `false`입니다. 실제 발급된 링크(`/enter/62c3…`)로 입장을 시도하면 `signInAnonymously()`가 `anonymous_provider_disabled`로 실패하고, 프론트는 "링크 입장이 아직 설정되지 않았어요. 회사 관리자에게 문의해 주세요."를 보여 줍니다. 즉 **프론트 문제가 아니라 이 설정 하나가 원인**입니다.참고
+  - 링크를 받은 뒤 입장이 안 되면 이 항목을 먼저 확인해 주세요. 켜 주시면 바로 재검증하겠습니다.
 - `employees.user_id` NULL 허용, `preferred_floor_number`/`floor_number` 추가, 좌석 없는 직원 숨김(RLS)은 세션 없이는 확인이 안 되어 아래 체크리스트로 남겨 둡니다.
 
 ## 1. 프론트가 하는 일 (계약)

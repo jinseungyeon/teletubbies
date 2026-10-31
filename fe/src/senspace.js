@@ -12,9 +12,23 @@ CLUS.forEach(([x, y, n, row], ci) => {
   const cols = [];
   for (let d = 0; d < n; d++) { const dx = x + d * 112; add((ci + d) % 2 ? 'workdesk_b' : 'workdesk', dx, y, y + 72); cols.push(dx, dx + 56); }
   cols.forEach(cx => { add('chair', cx + 14, y - 14, y + 17); add('chair_b', cx + 14, y + 76, y + 110); });
-  cols.forEach(cx => SEATS.push({ id: row + '-' + (++rc[row]), side: 'n', x: cx + 10, y: y - 40, z: y + 18, mx: cx + 14, my: y - 46 }));
-  cols.forEach(cx => SEATS.push({ id: row + '-' + (++rc[row]), side: 's', x: cx + 10, y: y + 44, z: y + 101, mx: cx + 14, my: y + 64 }));
+  cols.forEach(cx => SEATS.push({ id: row + '-' + (++rc[row]), floor: 1, side: 'n', x: cx + 10, y: y - 40, z: y + 18, mx: cx + 14, my: y - 46 }));
+  cols.forEach(cx => SEATS.push({ id: row + '-' + (++rc[row]), floor: 1, side: 's', x: cx + 10, y: y + 44, z: y + 101, mx: cx + 14, my: y + 64 }));
 });
+// 2층 업무석: 참조 2층 도면에 그려진 의자 위치를 맵 좌표로 옮긴 좌석들.
+// 도면은 1713×918이고 맵에서는 (0, 25)에서 1400×750으로 그려진다.
+const F2X = 1400 / 1713, F2Y = 750 / 918, F2OY = 25;
+const SEATS2 = [];
+[['J', [422, 527, 638, 750, 859, 1000, 1106, 1212, 1322, 1428], [203, 255, 305]],
+  ['K', [423, 541, 657, 771, 888, 1001, 1114, 1228, 1344, 1460, 1577], [432, 487, 542]],
+  ['L', [436, 550, 662, 777, 987, 1101, 1210, 1318, 1426, 1535], [676, 729, 782]]].forEach(([row, xs, ys]) => {
+  let n = 0;
+  ys.forEach(y => xs.forEach(x => {
+    const mapX = Math.round(x * F2X), mapY = Math.round(F2OY + y * F2Y);
+    SEATS2.push({ id: row + '-' + (++n), floor: 2, side: 'n', x: mapX - 18, y: mapY - 42, z: mapY + 14, mx: mapX - 14, my: mapY - 30 });
+  }));
+});
+SEATS.push(...SEATS2);
 for (let i = 0; i < 16; i++) add('chair_b', 372 + i * 60, 88, 130);
 add('mtable_long', 1103, 389, 720);
 for (let i = 0; i < 6; i++) { add('mchair_l', 1067, 412 + i * 50, 700); add('mchair_r', 1187, 412 + i * 50, 700); }
@@ -26,19 +40,19 @@ const pct = (x, y, w, h) => ({ position: 'absolute', left: x / 14 + '%', top: y 
 // Pre-created company spaces. They are part of the office layout, like the
 // reference build, so the map can open the same space card without any setup
 // step: a company simply has these rooms from the start.
-const TYPE = { work: ['업무석', 'work'], meeting: ['회의실', 'meeting'], focus: ['포커스룸', 'focus'], lounge: ['라운지', 'heart'], pantry: ['탕비실', 'coffee'] };
+const TYPE = { work: ['업무석', 'work'], meeting: ['회의실', 'meeting'], focus: ['포커스룸', 'focus'], lounge: ['라운지', 'heart'], pantry: ['탕비실', 'coffee'], stage: ['발표 공간', 'meeting'], desk: ['안내 데스크', 'help'] };
 const RM = (id, floor, name, type, x, y, w, h, cap, traits, sp, extra) => ({ id, floor, name, type, x, y, w, h, cap, traits, sp, cols: 3, dx: 48, dy: 64, ...extra });
 const ROOMS = [
-  RM('3-pantry', 3, '미니 탕비실', 'pantry', 1215, 112, 105, 215, 3, ['정수기', '간식'], [1226, 176], { cols: 2, dx: 44, dy: 72 }),
-  RM('3-meet', 3, '회의 공간', 'meeting', 1040, 370, 280, 365, 12, ['예약 필요', '화상회의', 'TV'], [1052, 392], { cols: 2, dx: 136, dy: 50 })
+  RM('1-pantry', 1, '미니 탕비실', 'pantry', 1215, 112, 105, 215, 3, ['정수기', '간식'], [1226, 176], { cols: 2, dx: 44, dy: 72 }),
+  RM('1-meet', 1, '회의 공간', 'meeting', 1040, 370, 280, 365, 12, ['예약 필요', '화상회의', 'TV'], [1052, 392], { cols: 2, dx: 136, dy: 50 })
 ];
 const ROOM = {}; ROOMS.forEach(r => { ROOM[r.id] = r; });
-const TINT = { focus: 'rgba(214,190,150,.28)', meeting: 'rgba(240,192,74,.14)', lounge: 'rgba(143,207,154,.2)', pantry: 'rgba(169,216,239,.28)', work: 'transparent' };
-const FLOOR_LABEL = { 3: { label: '3F 디자인 본부', short: '3F' } };
+const TINT = { stage: 'transparent', desk: 'transparent', focus: 'rgba(214,190,150,.28)', meeting: 'rgba(240,192,74,.14)', lounge: 'rgba(143,207,154,.2)', pantry: 'rgba(169,216,239,.28)', work: 'transparent' };
+const FLOOR_LABEL = { 1: { label: '1F 개발본부', short: '1F' }, 2: { label: '2F 발표실', short: '2F' } };
 const inR = (r, x, y) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
-const SEAT_ROOM = {}; SEATS.forEach(se => { const r = ROOMS.find(rr => rr.floor === 3 && inR(rr, se.x + 18, se.y + 40)); SEAT_ROOM[se.id] = r ? r.id : null; });
-const ROOM_REASON = { '3-meet': 'meeting', '3-pantry': 'meal' };
-const ROOM_REASON_LABEL = { '3-meet': '미팅', '3-pantry': '점심' };
+const SEAT_ROOM = {}; SEATS.forEach(se => { const r = ROOMS.find(rr => rr.floor === se.floor && inR(rr, se.x + 18, se.y + 40)); SEAT_ROOM[se.id] = r ? r.id : null; });
+const ROOM_REASON = { '1-meet': 'meeting', '1-pantry': 'meal' };
+const ROOM_REASON_LABEL = { '1-meet': '미팅', '1-pantry': '점심' };
 const UPD = [3, 7, 1, 12, 5, 2, 9, 4, 6, 15, 8];
 const di = s => Math.max(1, Math.min(5, Math.round(1 + Math.abs(s.temp - 3) + Math.abs(s.humid - 3) * 0.5 + (s.temp >= 4 && s.humid >= 4 ? 1 : 0))));
 const sv = (p, k) => k === 'discomfort' ? di(p.senses) : p.senses[k];
@@ -227,10 +241,10 @@ class Component extends DCLogic {
 
     // camera
     const vw = s.vw, vh = s.vh;
-    const floor = SESSION.floor || 3;
+    const floor = SESSION.floor || 1;
     let view = s.selecting || s.pickSeat ? 'all' : s.view;
     const zr = view === 'room' ? ROOM[s.zoomRoom] : null;
-    if (view === 'team' && floor !== 3) view = 'all';
+    if (view === 'team' && floor !== 1) view = 'all';
     if (view === 'room' && (!zr || zr.floor !== floor)) view = 'all';
     const base = view === 'team' ? s.team : view === 'room' ? { x: zr.x - 30, y: zr.y - 40, w: zr.w + 60, h: zr.h + 70 } : { x: 0, y: 0, w: MW, h: MH };
     const z0 = Math.min(2.4, Math.min(vw / base.w, vh / base.h) * (view === 'all' ? 0.98 : 0.92));
@@ -243,8 +257,13 @@ class Component extends DCLogic {
 
     // people placement
     const seatMap = {}; SEATS.forEach(se => { seatMap[se.id] = se; });
-    const placed = s.people.filter(p=>!EMBEDDED||p.floor===SESSION.floor).map(p => { const se = seatMap[p.id === 'me' && s.pickSeat ? (s.seatDraft || p.seat) : p.seat]; return { p, se, present: p.status === 'work' || (p.id === 'me' && s.pickSeat) }; }).filter(o => o.se);
-    const focus = (p, se) => { const zm = Math.max(s.zm, 1.3 / z0); set({ pop: p.id, view: s.view === 'team' && !(se.x > s.team.x && se.x < s.team.x + s.team.w && se.y > s.team.y && se.y < s.team.y + s.team.h) ? 'all' : s.view, zm, panX: se.x + 18 - (base.x + base.w / 2), panY: se.y - 10 - (base.y + base.h / 2) }); };
+    const placed = s.people.filter(p=>!EMBEDDED||p.floor===SESSION.floor).flatMap(p => {
+      const se = seatMap[p.id === 'me' && s.pickSeat ? (s.seatDraft || p.seat) : p.seat];
+      if (se && se.floor === (p.floor || 1)) return [{ p, se, present: p.status === 'work' || (p.id === 'me' && s.pickSeat), room: SEAT_ROOM[se.id] }];
+      // 2층은 좌석이 곧 자리다. 좌석이 없는 사람은 지도에 그리지 않는다.
+      return [];
+    });
+    const focus = (p, se) => { const o = placed.find(x => x.p.id === p.id); se = se || (o && o.se) || seatMap[p.seat]; if (!se) { set({ pop: p.id }); return; } const zm = Math.max(s.zm, 1.3 / z0); set({ pop: p.id, view: s.view === 'team' && !(se.x > s.team.x && se.x < s.team.x + s.team.w && se.y > s.team.y && se.y < s.team.y + s.team.h) ? 'all' : s.view, zm, panX: se.x + 18 - (base.x + base.w / 2), panY: se.y - 10 - (base.y + base.h / 2) }); };
     const glow = c => `drop-shadow(2px 0 0 ${c}) drop-shadow(-2px 0 0 ${c}) drop-shadow(0 2px 0 ${c}) drop-shadow(0 -2px 0 ${c})`;
     const mapPeople = placed.map(o => {
       // Away and off-work need to read differently: away is only dimmed,
@@ -294,16 +313,19 @@ class Component extends DCLogic {
     const selLabelStyle = { position: 'absolute', left: 0, top: 0, transform: `translateY(-110%) scale(${k})`, transformOrigin: '0 100%', padding: '4px 9px', borderRadius: 6, background: '#5d6594', color: '#fff', font: '12px Galmuri11', whiteSpace: 'nowrap' };
     const taken = new Set(s.people.filter(p => p.id !== 'me'&&(!EMBEDDED||p.floor===SESSION.floor)).map(p => p.seat));
     const draft = s.seatDraft || me.seat || null;
-    const seatMarkers = SEATS.filter(se => !taken.has(se.id) && (!SESSION.seatMap || SESSION.seatMap[se.id])).map(se => { const on = se.id === draft;
+    const seatMarkers = SEATS.filter(se => se.floor === floor && !taken.has(se.id) && (!SESSION.seatMap || SESSION.seatMap[se.id])).map(se => { const on = se.id === draft;
       return { id: se.id, onClick: () => set({ seatDraft: se.id }), style: { position: 'absolute', left: se.mx - 6, top: se.my, width: 40, height: 60, border: on ? '2px solid #5d6594' : '2px dashed #5d6594', background: on ? 'rgba(219,221,234,.35)' : 'rgba(255,255,255,.55)', borderRadius: 9, zIndex: 1800, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 3, boxSizing: 'border-box', font: '10.5px Galmuri11', color: on ? '#fff' : '#2f3563', cursor: 'pointer' } }; });
 
     // spaces: pre-created rooms, their tags, and the space card
-    const myLoc = me.status === 'away' ? (ROOM_REASON['3-meet'] === me.reason ? '3-meet' : ROOM_REASON['3-pantry'] === me.reason ? '3-pantry' : null) : null;
-    const occOf = rm => s.people.filter(p => {
-      if (p.status === 'off') return false;
-      if (rm.type === 'work') return p.status === 'work' && rm.floor === 3 && SEAT_ROOM[p.seat] === rm.id;
-      return p.status === 'away' && ROOM_REASON[rm.id] === p.reason;
-    });
+    const myLoc = me.status === 'away' ? (ROOM_REASON['1-meet'] === me.reason ? '1-meet' : ROOM_REASON['1-pantry'] === me.reason ? '1-pantry' : null) : null;
+    const occOf = rm => {
+      if (rm.floor === 2) return placed.filter(o => o.room === rm.id).map(o => o.p);
+      return s.people.filter(p => {
+        if (p.status === 'off') return false;
+        if (rm.type === 'work') return p.status === 'work' && rm.floor === 1 && SEAT_ROOM[p.seat] === rm.id;
+        return p.status === 'away' && ROOM_REASON[rm.id] === p.reason;
+      });
+    };
     const roomAgg = rm => { const occ = occOf(rm); return { occ, avg: kk => occ.length ? occ.reduce((a, p) => a + sv(p, kk), 0) / occ.length : null }; };
     const floorRooms = ROOMS.filter(r => r.floor === floor);
     const heatCol = rm => { if (!s.mini) return null; const a = roomAgg(rm).avg(s.mini); return a == null ? null : LV[Math.round(a)]; };
@@ -317,21 +339,21 @@ class Component extends DCLogic {
     const roomTags = busy ? [] : floorRooms.map(rm => { const selR = s.spaceId === rm.id;
       return { name: rm.name, icon: IC(TYPE[rm.type][1]), cnt: occOf(rm).length + '/' + rm.cap, onClick: () => this.openRoom(rm.id),
         cntStyle: { font: '11px Galmuri11', color: selR ? '#dbddea' : '#8a8499' },
-        style: { position: 'absolute', left: rm.x + 6, top: rm.y + (rm.walled ? 24 : 6), transform: 'scale(' + Math.min(k, 1.6) + ')', transformOrigin: '0 0', zIndex: 1900, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 7, border: '1.5px solid ' + (selR ? '#2b2d55' : '#cfc2aa'), background: selR ? '#2b2d55' : 'rgba(251,247,239,.94)', color: selR ? '#fff' : '#2e2a44', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', boxShadow: '0 2px 0 rgba(46,36,51,.18)' } }; });
+        style: { position: 'absolute', left: rm.tx != null ? rm.tx : rm.x + 6, top: rm.ty != null ? rm.ty : rm.y + (rm.walled ? 24 : 6), transform: 'scale(' + Math.min(k, floor === 2 ? 1.25 : 1.6) + ')', transformOrigin: '0 0', zIndex: 1900, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 7, border: '1.5px solid ' + (selR ? '#2b2d55' : '#cfc2aa'), background: selR ? '#2b2d55' : 'rgba(251,247,239,.94)', color: selR ? '#fff' : '#2e2a44', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', boxShadow: '0 2px 0 rgba(46,36,51,.18)' } }; });
     let rc = {}; const rcm = s.spaceId ? ROOM[s.spaceId] : null;
     if (rcm) {
       const ag = roomAgg(rcm), occ = ag.occ, nR = occ.length, ty = TYPE[rcm.type], full = nR >= rcm.cap;
       const ri = ROOMS.indexOf(rcm), mins = UPD[ri % UPD.length], at = new Date(Date.now() - mins * 60000);
       let mvLabel = '이 공간으로 이동하기', mvOn = true, mv = null;
       if (myLoc === rcm.id) { mvLabel = '내 자리로 복귀하기'; mv = () => this.returnSeat(); }
-      else if (rcm.type === 'work') {
+      else if (rcm.type === 'work' && rcm.floor === 1) {
         if (SEAT_ROOM[me.seat] === rcm.id) { mvOn = false; mvLabel = '지금 내 자리가 있는 공간이에요'; }
         else { mvLabel = '이 공간의 자리로 변경하기'; mv = () => this.startMoveSeat(); }
       } else if (full) { mvLabel = '지금은 수용 인원이 꽉 찼어요'; mvOn = false; }
       else if (ROOM_REASON[rcm.id]) { mv = () => this.goSpace(rcm.id); }
       else { mvOn = false; mvLabel = '이 공간은 이동할 수 없어요'; }
       const ratio = Math.min(1, nR / rcm.cap);
-      const company = SESSION.companyName || '센스컴퍼니';
+      const company = SESSION.companyName || 'InThon 컴퍼니';
       const fl = FLOOR_LABEL[rcm.floor] || { label: rcm.floor + 'F', short: rcm.floor + 'F' };
       rc = { path: company + ' › ' + fl.label, name: rcm.name, typeLabel: ty[0], typeIcon: IC(ty[1]), traits: rcm.traits, occ: String(nR), cap: String(rcm.cap),
         capFill: { position: 'absolute', left: 0, top: 0, bottom: 0, width: ratio * 100 + '%', borderRadius: 3, background: ratio >= 0.9 ? '#e5534b' : ratio >= 0.6 ? '#f0a93b' : '#3fae6a' },
@@ -468,7 +490,8 @@ class Component extends DCLogic {
       vpMove: e => { const d = this._drag; if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true; if (d.moved) set({ panX: d.px - dx / z, panY: d.py - dy / z }); },
       vpUp: () => { const d = this._drag; this._drag = null; if (d && !d.moved) set({ pop: null }); else this.forceUpdate(); },
       vpWheel: e => { if (s.selecting) return; const f = e.deltaY < 0 ? 1.12 : 1 / 1.12; set({ zm: Math.max(0.7, Math.min(4, s.zm * f)) }); },
-      furniture: FURN.map(f => ({ ...f, src: R(f.src) })), miniRooms, roomWalls, roomFills, roomTags, hasRoomCard: !!rcm, rc, closeRoom: () => this.closeRoom(),
+      // 2층은 도면 이미지에 가구가 그려져 있어 가구 레이어를 겹치지 않는다.
+      furniture: (floor === 1 ? FURN : []).map(f => ({ ...f, src: R(f.src) })), miniRooms, roomWalls, roomFills, roomTags, hasRoomCard: !!rcm, rc, closeRoom: () => this.closeRoom(),
       inRoomView: view === 'room', roomCrumb: view === 'room' ? ((FLOOR_LABEL[floor] || { short: floor + 'F' }).short + ' › ' + zr.name) : '',
       mapPeople, bubbles, hasPop: !!po && !s.pickSeat, pop, closePop: () => set({ pop: null }),
       teamMask, hasSelRect: !!sr && sr.w > 0, selRectStyle, selLabelStyle, teamName: '디자인팀',

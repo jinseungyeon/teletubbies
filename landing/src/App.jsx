@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
+import Contact from './components/Contact.jsx';
 import Process from './components/Process.jsx';
 import Features from './components/Features.jsx';
 import Why from './components/Why.jsx';
@@ -24,6 +25,7 @@ export default function App() {
       <Why />
       <Features />
       <Process />
+      <Contact />
     </main>
     <dialog ref={loginDialog} className="login-dialog" aria-labelledby="login-title">
       <h2 id="login-title">조직 로그인 안내</h2>

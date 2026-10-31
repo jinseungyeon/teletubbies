@@ -19,3 +19,20 @@ img { max-width: 100%; }
 .login-dialog p { line-height: 1.8; }
 .login-dialog form { margin-top: 24px; }
 .primary-button { min-height: 52px; padding: 0 26px; border: none; border-radius: 12px; background: #1b1f7a; color: white; font-weight: 700; cursor: pointer; box-shadow: inset 0 -4px 0 #10135a; }
+.contact-form { display: flex; flex-direction: column; gap: 16px; }
+.contact-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.contact-form label { display: flex; flex-direction: column; gap: 7px; font-size: 13px; font-weight: 700; color: #5d5870; min-width: 0; }
+.contact-form input:not([type=file]), .contact-form select, .contact-form textarea { width: 100%; box-sizing: border-box; min-height: 46px; padding: 0 14px; border: 1.5px solid #e2d6c2; border-radius: 11px; background: #fff; box-shadow: inset 0 2px 0 #f6f0e5; font-size: 15px; font-weight: 400; }
+.contact-form textarea { padding: 12px 14px; line-height: 1.55; resize: vertical; }
+.contact-form .file-drop { flex-direction: row; align-items: center; gap: 12px; padding: 14px 16px; border: 2px dashed #cfc2aa; border-radius: 12px; background: #faf6ee; cursor: pointer; position: relative; }
+.file-drop:hover, .file-drop:focus-within { border-color: #5d6594; }
+.file-drop input { position: absolute; inset: 0; width: 100%; opacity: 0; cursor: pointer; }
+.file-drop strong { display: block; font-size: 14px; overflow-wrap: anywhere; }
+.file-drop small { display: block; font-size: 12px; color: #746c7e; font-weight: 400; margin-top: 2px; }
+.upload-symbol { font-size: 28px; color: #5d6594; }
+.remove-file { align-self: flex-end; border: 0; background: none; text-decoration: underline; cursor: pointer; }
+.form-note { font-size: 12px; line-height: 1.6; color: #746c7e; margin: 0; }
+.form-status { font-size: 14px; line-height: 1.7; margin: 0; overflow-wrap: anywhere; }
+.form-status:empty { display: none; }
+.mail-draft { display: flex; align-items: center; justify-content: center; box-sizing: border-box; text-align: center; }
+button:disabled { opacity: .6; cursor: wait; }

@@ -1,5 +1,4 @@
 import "./sprites.js";
-// Character configurations and positions from the supplied B2B prototype.
 const configs = {
   minsu: {
     hair: "part",

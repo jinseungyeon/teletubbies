@@ -10,9 +10,9 @@ test('each sensory map selects its own current value', () => {
   for (const {key} of HEATMAP_VIEWS) assert.deepEqual(heatSamples([person()],3,key,now),[{x:402,y:162,value:expected[key]}]);
 });
 
-test('only current working people on the selected floor with a known seat contribute', () => {
+test('only clocked-in people on the selected floor with a known seat contribute', () => {
   const people = [person(),person({floor:2}),person({status:'away'}),person({status:'offline'}),person({sensesAt:'2026-10-29T05:00:00Z'}),person({sensesAt:null}),person({senses:{}}),person({seat:'unknown'}),person({senses:{noise:0}}),person({senses:{noise:6}})];
-  assert.equal(heatSamples(people,3,'noise',now).length,1);
+  assert.equal(heatSamples(people,3,'noise',now).length,2); // working + away; offline never counts
   assert.equal(heatSamples(people,2,'noise',now).length,1);
   assert.equal(heatSamples(people,3,'discomfort',now).length,0);
 });
@@ -22,12 +22,18 @@ test('Korea midnight expires yesterday’s readings', () => {
   assert.equal(heatSamples([before],3,'noise',new Date('2026-10-30T15:00:00Z')).length,0);
 });
 
-test('readings fill the whole floor as one continuous gradient', () => {
-  const samples=[{x:402,y:162,value:1}];
-  assert.deepEqual(heatAt(samples,402,162),{value:1,opacity:.72});
-  assert.deepEqual(heatAt(samples,1100,560),{value:1,opacity:.72});
+test('one person colours only their surroundings; unreported floor stays grey', () => {
+  const samples=[{x:402,y:162,value:5}];
+  assert.deepEqual(heatAt(samples,402,162),{value:5,coverage:1,opacity:.6});
+  const far=heatAt(samples,1100,560);
+  assert.equal(far.coverage,0);
+  assert.equal(far.opacity,.28);
+  const mid=heatAt(samples,402+140,162).coverage;
+  assert.ok(mid>0&&mid<1);
   assert.equal(heatAt([],402,162),null);
   assert.equal(heatmapSVG([]),'');
+  const svg=heatmapSVG(samples);
+  assert.ok(svg.includes('fill="rgb(167,169,180)"'), 'far cells are the neutral grey');
   // Between a calm and a loud desk the value changes smoothly, without jumps.
   const pair=[{x:402,y:162,value:1},{x:1050,y:162,value:5}];
   const line=[];for(let x=402;x<=1050;x+=8)line.push(heatAt(pair,x,162).value);

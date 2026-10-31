@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build": "node build.mjs",
     "dev": "node dev-server.mjs",
     "start": "node dev-server.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check src/app.js && node --check src/map.js && node --check src/data.js && node --check src/heatmap.js && node --check src/character.js"
+    "check": "node --check src/senspace.js && node --check src/senspace-bootstrap.js && node --check build.mjs && node --check src/app.js && node --check src/map.js && node --check src/data.js && node --check src/heatmap.js && node --check src/character.js && node --check src/pixel-icons.js"
   }
 }

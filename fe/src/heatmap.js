@@ -1,15 +1,19 @@
 import { currentSenses, SEATS, MAP_SIZE, FLOOR, FLOOR_PATH, onFloor } from './data.js';
 
 export const HEATMAP_VIEWS = [
-  { key: 'noise', name: '청각', icon: 'sound' },
-  { key: 'smell', name: '후각', icon: 'leaf' },
-  { key: 'temperature', name: '온도', icon: 'thermometer' },
-  { key: 'humidity', name: '습도', icon: 'drop' },
+  { key: 'noise', name: '청각', icon: 'noise' },
+  { key: 'smell', name: '후각', icon: 'smell' },
+  { key: 'temperature', name: '온도', icon: 'temp' },
+  { key: 'humidity', name: '습도', icon: 'humid' },
 ];
 export const HEAT_COLORS = ['#519ee5', '#62bdab', '#e6cc61', '#e99a60', '#d96577'];
 // Larger values blend neighbours more; ~half a desk keeps each seat its own.
 const SMOOTHING = 40 ** 2;
-const OPACITY = 0.72;
+// Colour only where someone actually shared: full colour within NEAR of a
+// reading, fading to neutral grey by FAR. Unreported floor stays grey.
+const NEAR = 70, FAR = 210;
+const UNSHARED = '#a7a9b4';
+const OPACITY = { shared: 0.6, unshared: 0.28 };
 const CELL = 16;
 
 export function heatSamples(people, floor, sense, now = new Date()) {
@@ -23,13 +27,24 @@ export function heatSamples(people, floor, sense, now = new Date()) {
   });
 }
 
-// Inverse-distance weighting: every point on the floor blends all readings, so
-// the map reads as one continuous gradient. Nearby people dominate, and the
-// result is a weighted mean, so more people never means a "hotter" colour.
-// The field covers the whole open-plan floor and stops at the building walls.
+// Value: inverse-distance weighting, so readings blend smoothly and more people
+// never means a "hotter" colour. Coverage: how close the nearest reading is;
+// it decides how much of that colour shows over the grey base.
 export function heatAt(samples, x, y) {
   if (!samples.length || !onFloor(x, y)) return null;
-  return { value: fieldAt(samples, x, y), opacity: OPACITY };
+  const coverage = coverageAt(samples, x, y);
+  return { value: fieldAt(samples, x, y), coverage, opacity: OPACITY.unshared + (OPACITY.shared - OPACITY.unshared) * coverage };
+}
+function coverageAt(samples, x, y) {
+  const nearest = Math.min(...samples.map(s => Math.hypot(x - s.x, y - s.y)));
+  const t = Math.max(0, Math.min(1, (nearest - NEAR) / (FAR - NEAR)));
+  return 1 - t * t * (3 - 2 * t); // smoothstep fade
+}
+// Blend two colours given as #rrggbb or rgb(r,g,b).
+function mix(from, to, amount) {
+  const channels = c => c.startsWith('#') ? c.slice(1).match(/../g).map(v => parseInt(v, 16)) : c.match(/\d+/g).map(Number);
+  const a = channels(from), b = channels(to);
+  return `rgb(${a.map((v, i) => Math.round(v + (b[i] - v) * amount)).join(',')})`;
 }
 function fieldAt(samples, x, y) {
   let weightSum = 0, valueSum = 0;
@@ -54,12 +69,14 @@ export function heatmapSVG(samples) {
   const { left, right, top, bottom } = FLOOR, cells = [];
   for (let y = top; y < bottom; y += CELL) {
     for (let x = left; x < right; x += CELL) {
-      const value = fieldAt(samples, Math.min(x + CELL / 2, right), Math.min(y + CELL / 2, bottom));
+      const cx = Math.min(x + CELL / 2, right), cy = Math.min(y + CELL / 2, bottom);
+      const coverage = coverageAt(samples, cx, cy), alpha = OPACITY.unshared + (OPACITY.shared - OPACITY.unshared) * coverage;
+      const fill = mix(UNSHARED, heatColor(fieldAt(samples, cx, cy)), coverage);
       // +1 overlap hides hairline seams between cells before the blur.
-      cells.push(`<rect x="${x}" y="${y}" width="${Math.min(CELL, right - x) + 1}" height="${Math.min(CELL, bottom - y) + 1}" fill="${heatColor(value)}"/>`);
+      cells.push(`<rect x="${x}" y="${y}" width="${Math.min(CELL, right - x) + 1}" height="${Math.min(CELL, bottom - y) + 1}" fill="${fill}" fill-opacity="${alpha.toFixed(2)}"/>`);
     }
   }
   // Blur the cell grid into a smooth field, clipped to the floor outline so it
   // never bleeds past the walls or into the entrance notch.
-  return `<svg class="mini-heatmap" viewBox="0 0 ${MAP_SIZE.width} ${MAP_SIZE.height}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><filter id="heat-blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="14" edgeMode="duplicate"/></filter><clipPath id="heat-clip"><path d="${FLOOR_PATH}"/></clipPath></defs><g clip-path="url(#heat-clip)" opacity="${OPACITY}"><g filter="url(#heat-blur)">${cells.join('')}</g></g></svg>`;
+  return `<svg class="mini-heatmap" viewBox="0 0 ${MAP_SIZE.width} ${MAP_SIZE.height}" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><defs><filter id="heat-blur" x="0" y="0" width="100%" height="100%"><feGaussianBlur stdDeviation="14" edgeMode="duplicate"/></filter><clipPath id="heat-clip"><path d="${FLOOR_PATH}"/></clipPath></defs><g clip-path="url(#heat-clip)"><g filter="url(#heat-blur)">${cells.join('')}</g></g></svg>`;
 }

@@ -1,0 +1,15 @@
+<sc-if value="{{ isAuth }}">
+  <main class="ss-auth"><section class="ss-auth-card" aria-label="사무실 입장">
+    <div class="ss-auth-hero"><img src="{{ heroA }}" alt="" style="position:absolute;left:270px;top:28px;width:54px;height:84px;"><img src="{{ heroB }}" alt="" style="position:absolute;left:350px;top:28px;width:54px;height:84px;"><img src="/src/assets/furniture/workdesk.png" alt="" style="position:absolute;left:250px;top:66px;width:168px;height:108px;"><span class="ss-wordmark">SENSPACE<span style="color:#f0c04a">✦</span></span></div>
+    <div class="ss-auth-body"><h1>{{ authTitle }}</h1><p>서로의 감각을 이해하는 우리 팀의 사무실</p>
+      <div class="ss-auth-tabs"><button onClick="{{ showLogin }}" aria-pressed="{{ isLogin }}">로그인</button><button onClick="{{ showSignup }}" aria-pressed="{{ isSignup }}">회원가입</button></div>
+      <form onSubmit="{{ submitAuth }}">
+        <sc-if value="{{ isSignup }}"><label>이름<input name="name" required maxlength="30" autocomplete="name" placeholder="이름을 입력해 주세요"></label></sc-if>
+        <label>회사 이메일<input name="email" type="email" required autocomplete="email" placeholder="name@company.com"></label>
+        <label>비밀번호<input name="password" type="password" required minlength="8" autocomplete="{{ passwordAutocomplete }}" placeholder="8자 이상 입력해 주세요"></label>
+        <sc-if value="{{ isSignup }}"><label>비밀번호 확인<input name="confirm" type="password" required minlength="8" autocomplete="new-password" placeholder="비밀번호를 다시 입력해 주세요"></label><label>기업 초대 코드<input name="code" required placeholder="ONYU2026"></label></sc-if>
+        <p class="ss-auth-error" role="alert">{{ authError }}</p><button class="ss-primary" type="submit" disabled="{{ authBusy }}">{{ authSubmit }}</button>
+      </form><button class="ss-secondary" onClick="{{ enterDemo }}" disabled="{{ authBusy }}">데모 사무실 둘러보기</button><p class="ss-demo-note">로컬 데모 · 비밀번호는 저장하거나 인증하지 않아요.<br>초대 코드 ONYU2026</p>
+    </div>
+  </section></main>
+</sc-if>

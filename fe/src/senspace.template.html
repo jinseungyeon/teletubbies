@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Senspace — 우리 팀의 감각 사무실</title>
+<link rel="stylesheet" href="/src/senspace.css">
+<script src="/vendor/react.production.min.js"></script>
+<script src="/vendor/react-dom.production.min.js"></script>
+<script src="/src/sprites.js"></script>
+<script type="module" src="/src/senspace-bootstrap.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+
+
+
+<style>
+html,body{margin:0;height:100%;background:#262848;font-family:Pretendard,system-ui,sans-serif;color:#2e2a44;-webkit-font-smoothing:antialiased}
+a{color:#5b4fc9;text-decoration:none} a:hover{color:#2b2d55}
+input,select,textarea,button{font-family:inherit;color:inherit}
+input::placeholder{color:#b3aa9a}
+@keyframes ssPulse{0%{transform:scale(.6);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+@keyframes ssSpin{to{transform:rotate(360deg)}}
+@keyframes ssTwinkle{0%,100%{opacity:.2;transform:scale(.7)}50%{opacity:1;transform:scale(1.15)}}
+</style>
+</helmet>
+<div class="ss-root" style="width:100%;height:100vh;min-width:1100px;min-height:760px;overflow:hidden;position:relative;background:#262848;">
+
+<!-- AUTH_SCREEN -->
+<sc-if value="{{ isEmail }}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="01 초대 메일" style="position:absolute;inset:0;background:#ebe6dc;display:flex;flex-direction:column;">
+    <div style="height:52px;display:flex;align-items:center;gap:12px;padding:0 22px;background:#fff;border-bottom:1px solid #e2dccf;font-size:14px;color:#6e6a84;">
+      <span style="font-weight:800;color:#2e2a44;">받은편지함</span><span style="color:#c9c1b0;">/</span><span>[Senspace] 센스컴퍼니 사무실 초대</span>
+    </div>
+    <div style="flex:1;overflow:auto;display:flex;justify-content:center;padding:36px 24px;">
+      <div style="width:min(640px,100%);display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="width:40px;height:40px;border-radius:12px;background:#2b2d55;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 #17183a;font:700 18px Galmuri11;color:#fff;">S</span>
+          <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:800;">Senspace</span><span style="font-size:13px;color:#8a8499;">invite@senspace.io → minji.kim@senscompany.co</span></span>
+          <span style="margin-left:auto;font-size:13px;color:#a39c8e;">오전 9:02</span>
+        </div>
+        <div style="background:#fbf7ef;border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px #e2d6c2,0 3px 0 #e3d6bf,0 24px 50px -24px rgba(42,40,78,.4);">
+          <div style="height:150px;position:relative;background:url(/src/assets/tiles/marble.png) 0 0/128px 128px;image-rendering:pixelated;border-bottom:3px solid #2e2433;overflow:hidden;">
+            <img src="{{ heroA }}" style="position:absolute;left:162px;top:20px;width:54px;height:84px;image-rendering:pixelated;z-index:0;">
+            <img src="{{ heroB }}" style="position:absolute;left:246px;top:20px;width:54px;height:84px;image-rendering:pixelated;z-index:0;">
+            <img src="/src/assets/furniture/workdesk.png" style="position:absolute;left:150px;top:52px;width:168px;height:108px;image-rendering:pixelated;z-index:1;">
+            <img src="/src/assets/furniture/pillar_table.png" style="position:absolute;left:390px;top:40px;width:90px;height:102px;image-rendering:pixelated;">
+            <img src="{{ heroC }}" style="position:absolute;left:490px;top:44px;width:54px;height:84px;image-rendering:pixelated;">
+            <div style="position:absolute;left:26px;top:22px;padding:10px 14px;background:#fbf7ef;border:3px solid #2e2433;border-radius:5px;box-shadow:0 4px 0 #2e2433;font:700 22px Galmuri11;color:#2b2d55;letter-spacing:2px;">SENSPACE<span style="color:#f0c04a;font-size:14px;margin-left:4px;">✦</span></div>
+          </div>
+          <div style="padding:30px 34px 32px;display:flex;flex-direction:column;gap:14px;">
+            <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;line-height:1.35;">김민지님, 센스컴퍼니 3층 사무실에<br>초대되었어요</div>
+            <div style="font-size:15px;line-height:1.65;color:#5d5870;text-wrap:pretty;">동료들이 지금 어떤 상태인지, 어떤 감각에 예민한지 한눈에 보며 함께 일하는 메타버스 사무실이에요. 실제 내 자리에 내 캐릭터를 앉혀 보세요.</div>
+            <button onClick="{{ goWelcome }}" style="align-self:flex-start;margin-top:8px;height:52px;padding:0 30px;border:none;border-radius:12px;background:#2b2d55;color:#fff;font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:inset 0 -4px 0 #17183a,inset 0 1px 0 rgba(255,255,255,.16),0 8px 16px -10px rgba(23,24,58,.8);" style-active="transform:translateY(2px);box-shadow:inset 0 -1px 0 #17183a;">들어가기<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+            <div style="font-size:12.5px;color:#a39c8e;">이 초대 링크는 7일 동안 유효해요.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showSpace }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="03 가상 사무실" style="{{ spaceStyle }}">
+    <div class="ss-space-header" style="height:60px;flex-shrink:0;display:flex;align-items:center;gap:14px;padding:0 18px;background:#fbf7ef;border-bottom:1px solid #e7dcc8;box-shadow:0 2px 0 #ece2cf;position:relative;z-index:60;">
+      <div style="display:flex;align-items:center;gap:10px;margin-right:6px;">
+        <div style="width:34px;height:34px;border-radius:10px;background:#2b2d55;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 #17183a;position:relative;"><span style="font:700 17px Galmuri11;color:#fff;margin-top:-2px;">S</span><span style="position:absolute;top:-6px;right:-6px;font:12px Galmuri11;color:#f0c04a;">✦</span></div>
+        <div style="font:700 17px Galmuri11;letter-spacing:1.5px;color:#2b2d55;">SENSPACE</div>
+      </div>
+      <div style="height:38px;display:flex;align-items:center;padding:0 14px;border-radius:11px;background:#fff;border:1.5px solid #e2d6c2;box-shadow:inset 0 -2px 0 #efe6d5;font-size:14px;font-weight:700;">센스컴퍼니 · 3층</div>
+      <div style="height:38px;display:flex;align-items:center;gap:16px;padding:0 16px;border-radius:11px;background:#fff;border:1.5px solid #e2d6c2;box-shadow:inset 0 -2px 0 #efe6d5;font-size:13px;font-weight:700;color:#4a4560;">
+        <sc-for list="{{ counts }}" as="c" hint-placeholder-count="4"><span style="display:flex;align-items:center;gap:6px;white-space:nowrap;"><span style="{{ c.dot }}"></span>{{ c.label }}<span style="color:#8a8499;font-weight:600;">{{ c.n }}</span></span></sc-for>
+      </div>
+      <div style="flex:1;"></div>
+      <button onClick="{{ openSettings }}" title="알림 설정" style="width:40px;height:40px;border-radius:11px;border:1.5px solid #e2d6c2;background:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#2b2d55;box-shadow:inset 0 -2px 0 #efe6d5;position:relative;" style-hover="background:#faf6ee;">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"></path><path d="M10 20a2 2 0 0 0 4 0"></path></svg>
+        <sc-if value="{{ notifOn }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:7px;right:8px;width:8px;height:8px;border-radius:2px;background:#3fae6a;box-shadow:0 0 0 2px #fff;"></span></sc-if>
+      </button>
+      <div style="position:relative;">
+        <button onClick="{{ toggleMenu }}" style="height:44px;display:flex;align-items:center;gap:10px;padding:0 10px 0 4px;border-radius:13px;border:1.5px solid #e2d6c2;background:#fff;cursor:pointer;box-shadow:inset 0 -2px 0 #efe6d5;" style-hover="background:#faf6ee;">
+          <span style="width:34px;height:34px;border-radius:10px;overflow:hidden;background:#ece8fb;display:block;"><img src="{{ meImg }}" style="width:45px;height:70px;margin:-6px 0 0 -5.5px;image-rendering:pixelated;display:block;"></span>
+          <span style="display:flex;flex-direction:column;align-items:flex-start;gap:2px;"><span style="font-size:14px;font-weight:800;">{{ me.name }}</span><span style="font-size:11.5px;color:#8a8499;">{{ me.role }}</span></span>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6e6a84" stroke-width="2.6" stroke-linecap="round"><path d="m6 9 6 6 6-6"></path></svg>
+        </button>
+        <sc-if value="{{ showMenu }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;right:0;top:54px;width:240px;background:#fbf7ef;border:1px solid #e2d6c2;border-radius:16px;padding:8px;box-shadow:inset 0 1px 0 #fff,0 3px 0 #e3d6bf,0 24px 40px -18px rgba(42,40,78,.5);display:flex;flex-direction:column;gap:2px;z-index:80;">
+            <sc-for list="{{ menuItems }}" as="m" hint-placeholder-count="5">
+              <button onClick="{{ m.onClick }}" style="display:flex;align-items:center;gap:10px;height:42px;padding:0 10px;border-radius:10px;border:none;background:transparent;cursor:pointer;font-size:14px;font-weight:700;width:100%;text-align:left;" style-hover="background:#f0ecfb;">
+                <img src="{{ m.icon }}" style="height:14px;width:18px;object-fit:contain;image-rendering:pixelated;"><span style="flex:1;">{{ m.label }}</span><span style="font-size:11.5px;color:#a39c8e;">{{ m.hint }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div class="ss-space-content" style="flex:1;min-height:0;display:flex;gap:12px;padding:12px 12px 0;">
+      <div ref="{{ mapRef }}" onPointerDown="{{ vpDown }}" onPointerMove="{{ vpMove }}" onPointerUp="{{ vpUp }}" onWheel="{{ vpWheel }}" style="{{ vpStyle }}">
+        <div style="{{ layerStyle }}">
+          <div style="position:absolute;left:344px;top:100px;width:984px;height:644px;background:url(/src/assets/tiles/marble.png) 0 0/128px 128px;image-rendering:pixelated;"></div>
+          <div style="position:absolute;left:64px;top:214px;width:280px;height:530px;background:url(/src/assets/tiles/marble.png) 64px 0/128px 128px;image-rendering:pixelated;"></div>
+          <div style="position:absolute;left:344px;top:36px;width:984px;height:28px;background:repeating-linear-gradient(90deg,#9fd4ee 0 118px,#6e7190 118px 123px);border:2px solid #2e2433;box-sizing:border-box;box-shadow:inset 0 3px 0 #d6f0fb;"></div>
+          <div style="position:absolute;left:344px;top:62px;width:984px;height:38px;background:#f6f0e4;border:2px solid #2e2433;border-top:none;box-sizing:border-box;box-shadow:inset 0 -5px 0 #e2d8c4,0 4px 0 rgba(46,36,51,.12);"></div>
+          <div style="position:absolute;left:316px;top:36px;width:30px;height:180px;background:#efe6d6;border:2px solid #2e2433;box-sizing:border-box;box-shadow:inset -4px 0 0 #e0d4bf;"></div>
+          <div style="position:absolute;left:36px;top:188px;width:310px;height:28px;background:#efe6d6;border:2px solid #2e2433;box-sizing:border-box;box-shadow:inset 0 -4px 0 #e0d4bf,0 4px 0 rgba(46,36,51,.12);"></div>
+          <div style="position:absolute;left:36px;top:188px;width:30px;height:584px;background:#efe6d6;border:2px solid #2e2433;box-sizing:border-box;box-shadow:inset -4px 0 0 #e0d4bf;"></div>
+          <div style="position:absolute;left:36px;top:742px;width:1324px;height:30px;background:#efe6d6;border:2px solid #2e2433;box-sizing:border-box;box-shadow:inset 0 4px 0 #f8f2e7;"></div>
+          <div style="position:absolute;left:1326px;top:36px;width:34px;height:736px;background:repeating-linear-gradient(180deg,#9fd4ee 0 116px,#6e7190 116px 122px);border:2px solid #2e2433;box-sizing:border-box;box-shadow:inset 4px 0 0 #d6f0fb;"></div>
+          <div style="position:absolute;left:72px;top:734px;width:78px;height:46px;background:linear-gradient(135deg,#d9f0fb 0 45%,#eaf7fd 45% 55%,#c4e6f6 55%);border:2px solid #2e2433;border-radius:3px;box-sizing:border-box;box-shadow:inset 0 0 0 3px #8fbad3;"></div>
+          <div style="position:absolute;left:78px;top:430px;width:40px;height:220px;display:flex;align-items:center;justify-content:center;z-index:720;pointer-events:none;"><span style="writing-mode:vertical-rl;font:700 13px Pretendard;color:#4a2e1a;letter-spacing:2px;">정보데스크 · front desk</span></div>
+          <sc-for list="{{ furniture }}" as="f" hint-placeholder-count="0"><img src="{{ f.src }}" style="{{ f.style }}"></sc-for>
+          <sc-for list="{{ mapPeople }}" as="m" hint-placeholder-count="0">
+            <div onPointerDown="{{ stop }}" onClick="{{ m.onClick }}" style="{{ m.style }}" title="{{ m.name }}" style-hover="transform:translateY(-2px);"><img src="{{ m.img }}" style="width:36px;height:56px;image-rendering:pixelated;display:block;"></div>
+          </sc-for>
+          <sc-for list="{{ bubbles }}" as="b" hint-placeholder-count="0">
+            <div onPointerDown="{{ stop }}" onClick="{{ b.onClick }}" style="{{ b.style }}"><img src="{{ b.icon }}" style="height:22px;width:22px;object-fit:contain;image-rendering:pixelated;"><sc-if value="{{ b.showText }}" hint-placeholder-val="{{ false }}"><span style="max-width:104px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ b.text }}</span></sc-if><span style="{{ b.tail }}"></span></div>
+          </sc-for>
+          <sc-for list="{{ teamMask }}" as="tm" hint-placeholder-count="0"><div style="{{ tm.style }}"></div></sc-for>
+          <sc-if value="{{ hasSelRect }}" hint-placeholder-val="{{ false }}"><div style="{{ selRectStyle }}"><span style="{{ selLabelStyle }}">{{ teamName }}</span></div></sc-if>
+          <sc-if value="{{ pickSeat }}" hint-placeholder-val="{{ false }}">
+            <div style="position:absolute;left:-3000px;top:-3000px;width:7400px;height:6800px;background:rgba(38,40,72,.3);z-index:1700;"></div>
+            <sc-for list="{{ seatMarkers }}" as="sm" hint-placeholder-count="0"><button onPointerDown="{{ stop }}" onClick="{{ sm.onClick }}" style="{{ sm.style }}">{{ sm.id }}</button></sc-for>
+          </sc-if>
+        </div>
+
+        <div onPointerDown="{{ stop }}" style="position:absolute;left:14px;top:14px;display:flex;align-items:center;gap:8px;z-index:30;">
+          <span style="display:flex;background:#fbf7ef;border-radius:12px;padding:4px;box-shadow:0 0 0 1.5px #3a3c63,0 4px 0 rgba(23,24,58,.35);">
+            <button onClick="{{ viewAll }}" style="{{ viewAllStyle }}">전체 공간</button>
+            <button onClick="{{ viewTeam }}" style="{{ viewTeamStyle }}">내 팀</button>
+          </span>
+          <button onClick="{{ startSelect }}" style="height:38px;padding:0 13px;border-radius:11px;border:none;background:#fbf7ef;cursor:pointer;font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;box-shadow:0 0 0 1.5px #3a3c63,0 4px 0 rgba(23,24,58,.35);" style-active="transform:translateY(1px);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-dasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>팀 영역 설정</button>
+        </div>
+        <div onPointerDown="{{ stop }}" style="position:absolute;right:14px;top:14px;display:flex;align-items:center;gap:8px;z-index:30;">
+          <span style="display:flex;align-items:center;background:#fbf7ef;border-radius:12px;padding:4px;box-shadow:0 0 0 1.5px #3a3c63,0 4px 0 rgba(23,24,58,.35);">
+            <button onClick="{{ zoomOut }}" style="width:32px;height:30px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-size:18px;font-weight:800;color:#2b2d55;">−</button>
+            <button onClick="{{ zoomFit }}" style="min-width:52px;height:30px;border:none;border-radius:8px;background:#fff;cursor:pointer;font:12px Galmuri11;color:#2b2d55;box-shadow:inset 0 -2px 0 #efe6d5;">{{ zoomLabel }}</button>
+            <button onClick="{{ zoomIn }}" style="width:32px;height:30px;border:none;border-radius:8px;background:transparent;cursor:pointer;font-size:18px;font-weight:800;color:#2b2d55;">+</button>
+          </span>
+          <button onClick="{{ toggleFull }}" title="전체 화면" style="width:38px;height:38px;border-radius:11px;border:none;background:#fbf7ef;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#2b2d55;box-shadow:0 0 0 1.5px #3a3c63,0 4px 0 rgba(23,24,58,.35);"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="{{ fullIcon }}"></path></svg></button>
+        </div>
+        <sc-if value="{{ showZoomHint }}" hint-placeholder-val="{{ true }}">
+          <div style="position:absolute;left:14px;bottom:14px;padding:7px 11px;border-radius:9px;background:rgba(251,247,239,.92);font-size:12px;font-weight:600;color:#5d5870;z-index:30;box-shadow:0 0 0 1.5px #3a3c63;pointer-events:none;">확대하면 상태 메시지가 함께 보여요</div>
+        </sc-if>
+
+        <sc-if value="{{ selecting }}" hint-placeholder-val="{{ false }}">
+          <div onPointerDown="{{ selDown }}" onPointerMove="{{ selMove }}" onPointerUp="{{ selUp }}" style="position:absolute;inset:0;z-index:40;cursor:crosshair;background:rgba(38,40,72,.15);"></div>
+          <div onPointerDown="{{ stop }}" style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);display:flex;align-items:center;gap:12px;padding:10px 10px 10px 16px;background:#fbf7ef;border-radius:14px;box-shadow:0 0 0 1.5px #3a3c63,0 6px 0 rgba(23,24,58,.35);z-index:50;white-space:nowrap;">
+            <span style="font-size:14px;font-weight:800;">지도에서 드래그해 우리 팀 영역을 그려주세요</span>
+            <button onClick="{{ cancelSelect }}" style="height:36px;padding:0 14px;border-radius:10px;background:#f3ead8;border:1.5px solid #dccdb2;font-size:13px;font-weight:700;cursor:pointer;">취소</button>
+            <button onClick="{{ saveTeam }}" style="{{ saveTeamStyle }}">이 영역으로 저장</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{ pickSeat }}" hint-placeholder-val="{{ false }}">
+          <div onPointerDown="{{ stop }}" style="position:absolute;left:50%;top:64px;transform:translateX(-50%);display:flex;align-items:center;gap:14px;padding:10px 10px 10px 14px;background:#fbf7ef;border-radius:16px;box-shadow:0 0 0 1.5px #3a3c63,0 6px 0 rgba(23,24,58,.35);z-index:50;white-space:nowrap;">
+            <span style="width:30px;height:30px;border-radius:50%;background:#2b2d55;color:#fff;font:700 14px Galmuri11;display:flex;align-items:center;justify-content:center;">3</span>
+            <span style="display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:800;">내 자리 지정</span><span style="font-size:12.5px;color:#8a8499;">실제 내 자리를 눌러 캐릭터를 앉혀주세요</span></span>
+            <span style="padding:7px 12px;border-radius:9px;background:#ece8fb;border:1.5px solid #8b7fe0;font:13px Galmuri11;color:#4b3fb8;">{{ seatDraft }}</span>
+            <button onClick="{{ confirmSeat }}" style="height:40px;padding:0 16px;border:none;border-radius:11px;background:#2b2d55;color:#fff;font-size:14px;font-weight:700;cursor:pointer;box-shadow:inset 0 -3px 0 #17183a;">내 자리로 입장하기 →</button>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ hasPop }}" hint-placeholder-val="{{ false }}">
+        <div onPointerDown="{{ stop }}" style="{{ pop.style }}">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span style="{{ pop.avStyle }};display:flex;align-items:flex-start;justify-content:center;"><img src="{{ pop.img }}" style="width:44px;height:auto;margin:0;image-rendering:pixelated;display:block;flex:none;"></span>
+            <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;"><span style="font-size:15px;font-weight:800;">{{ pop.name }}</span><span style="font-size:12px;color:#8a8499;">{{ pop.role }} · {{ pop.seat }}</span></span>
+            <button onClick="{{ closePop }}" style="width:26px;height:26px;border-radius:8px;border:1.5px solid #e2d6c2;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6e6a84;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+          </div>
+          <div style="{{ pop.statusStyle }}"><img src="{{ pop.statusIcon }}" style="height:15px;width:18px;object-fit:contain;image-rendering:pixelated;"><span style="display:flex;flex-direction:column;gap:2px;"><b style="font-size:13.5px;">{{ pop.statusTitle }}</b><span style="font-size:12px;opacity:.85;">{{ pop.statusSub }}</span></span></div>
+          <sc-if value="{{ pop.hasMsg }}" hint-placeholder-val="{{ false }}"><div style="display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;background:#fff;border:1px solid #ece2cf;font-size:13px;"><img src="{{ pop.msgIcon }}" style="height:13px;width:16px;object-fit:contain;image-rendering:pixelated;">{{ pop.msg }}</div></sc-if>
+          <button onClick="{{ pop.openCard }}" style="height:36px;border-radius:10px;border:none;background:#2b2d55;color:#fff;font-size:13px;font-weight:700;cursor:pointer;box-shadow:inset 0 -3px 0 #17183a;">감각 카드 보기</button>
+          <span style="{{ pop.tailStyle }}"></span>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ showSide }}" hint-placeholder-val="{{ true }}">
+        <div style="width:300px;flex-shrink:0;display:flex;flex-direction:column;background:#fbf7ef;border:1px solid #e7dcc8;border-radius:18px;box-shadow:inset 0 1px 0 #fff,0 2px 0 #e3d6bf;overflow:hidden;">
+          <div style="padding:14px 14px 10px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid #efe6d5;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <div style="font-size:16px;font-weight:800;">동료 목록 <span style="color:#8a8499;">({{ listCount }})</span></div>
+              <span style="display:flex;background:#efe6d5;border-radius:9px;padding:3px;">
+                <button onClick="{{ listTeam }}" style="{{ listTeamStyle }}">내 팀</button>
+                <button onClick="{{ listAll }}" style="{{ listAllStyle }}">전체</button>
+              </span>
+            </div>
+            <span style="display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:10px;background:#f3ecdf;border:1.5px solid #e9dfcc;color:#8a8499;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-4-4"></path></svg>
+              <input value="{{ q }}" onChange="{{ onQ }}" placeholder="이름, 직책으로 찾기" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:13.5px;">
+            </span>
+          </div>
+          <div style="flex:1;min-height:0;overflow:auto;padding:6px 8px 10px;display:flex;flex-direction:column;gap:2px;">
+            <sc-for list="{{ listItems }}" as="it" hint-placeholder-count="8">
+              <button onClick="{{ it.onClick }}" style="{{ it.style }}" style-hover="background:#f3effc;">
+                <span style="{{ it.avatarStyle }};display:flex;align-items:flex-start;justify-content:center;"><img src="{{ it.img }}" style="width:42px;height:auto;margin:0;image-rendering:pixelated;display:block;flex:none;"></span>
+                <span style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px;align-items:flex-start;">
+                  <span style="display:flex;align-items:center;gap:6px;width:100%;"><span style="font-size:14px;font-weight:800;">{{ it.name }}</span><sc-if value="{{ it.isMe }}" hint-placeholder-val="{{ false }}"><span style="font-size:10.5px;font-weight:700;background:#ece8fb;color:#5b4fc9;padding:2px 6px;border-radius:5px;">나</span></sc-if><span style="flex:1;"></span><span style="{{ it.statusStyle }}"><span style="{{ it.dot }}"></span>{{ it.status }}</span></span>
+                  <span style="{{ it.lineStyle }}"><img src="{{ it.icon }}" style="height:12px;width:15px;object-fit:contain;image-rendering:pixelated;flex-shrink:0;"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ it.line }}</span></span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <sc-if value="{{ showSide }}" hint-placeholder-val="{{ true }}">
+      <div style="height:256px;flex-shrink:0;display:flex;gap:12px;padding:12px;box-sizing:border-box;">
+        <section class="ss-profile">
+          <div class="ss-profile-head"><button onClick="{{ openMyCard }}" title="내 감각 카드" class="ss-profile-avatar"><img src="{{ meImg }}" alt="내 캐릭터"></button><div class="ss-profile-copy"><strong>{{ me.name }}</strong><span>{{ me.role }}</span><small>3F {{ me.seat }}</small></div></div>
+          <div class="ss-clock"><sc-for list="{{ clockButtons }}" as="sb"><button onClick="{{ sb.onClick }}" style="{{ sb.style }}"><span style="{{ sb.radio }}"></span>{{ sb.label }}</button></sc-for></div>
+          <button class="ss-away" onClick="{{ toggleAway }}" aria-expanded="{{ awayOpen }}" aria-controls="ss-away-form">자리 비움</button>
+          <div class="ss-away-slot"><sc-if value="{{ awayOpen }}"><form id="ss-away-form" onSubmit="{{ saveAway }}"><input name="reason" value="{{ awayDraft }}" onChange="{{ onAwayDraft }}" maxlength="30" aria-label="자리 비움 사유" placeholder="사유 입력 (예: 회의, 16시 복귀)"><button type="submit" aria-label="사유 저장">✓</button></form></sc-if></div>
+        </section>
+
+        <div style="flex:1;min-width:0;background:#fbf7ef;border:1px solid #e7dcc8;border-radius:18px;box-shadow:inset 0 1px 0 #fff,0 2px 0 #e3d6bf;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;padding:14px 18px;box-sizing:border-box;">
+          <div style="display:flex;flex-direction:column;gap:3px;min-width:0;">
+            <div style="font-size:14px;font-weight:800;margin-bottom:8px;padding:3px 0;">현재 내 감각 상태</div>
+            <sc-for list="{{ senseRows }}" as="r" hint-placeholder-count="6">
+              <div style="display:flex;align-items:center;gap:10px;height:25px;">
+                <img src="{{ r.icon }}" style="height:15px;width:18px;object-fit:contain;image-rendering:pixelated;">
+                <span style="width:56px;font-size:13px;font-weight:600;color:#4a4560;">{{ r.label }}</span>
+                <div onPointerDown="{{ r.down }}" onPointerMove="{{ r.move }}" style="flex:1;height:22px;position:relative;cursor:pointer;touch-action:none;">
+                  <span style="position:absolute;left:0;right:0;top:8px;height:6px;border-radius:3px;background:#e7decd;box-shadow:inset 0 1px 0 #d8ccb6;"></span>
+                  <span style="{{ r.fill }}"></span>
+                  <span style="{{ r.knob }}"></span>
+                </div>
+                <span style="{{ r.valStyle }}">{{ r.val }}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;min-width:0;">
+            <div style="display:flex;align-items:baseline;justify-content:space-between;"><span style="font-size:14px;font-weight:800;padding:3px 0;">빠른 상태 설정</span><span style="font-size:11.5px;color:#a39c8e;">지도와 동료 목록에 보여요</span></div>
+            <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px;">
+              <sc-for list="{{ quickBtns }}" as="qb" hint-placeholder-count="12">
+                <button onClick="{{ qb.onClick }}" title="{{ qb.text }}" style="{{ qb.style }}" style-hover="border-color:#8b7fe0;"><img src="{{ qb.icon }}" style="height:17px;width:21px;object-fit:contain;image-rendering:pixelated;"></button>
+              </sc-for>
+            </div>
+            <span style="display:flex;align-items:center;gap:8px;height:42px;padding:0 12px;border-radius:11px;border:1.5px solid #e2d6c2;background:#fff;box-shadow:inset 0 2px 0 #f6f0e5;">
+              <img src="{{ msgIcon }}" style="height:14px;width:17px;object-fit:contain;image-rendering:pixelated;">
+              <input value="{{ me.msg }}" onChange="{{ onMsg }}" maxlength="50" placeholder="상태 메시지를 입력하세요" style="flex:1;min-width:0;border:none;outline:none;background:transparent;font-size:14px;">
+              <span style="font-size:11.5px;color:#a39c8e;">{{ msgCount }}/50</span>
+            </span>
+          </div>
+        </div>
+
+        <div style="width:320px;flex-shrink:0;background:#fbf7ef;border:1px solid #e7dcc8;border-radius:18px;box-shadow:inset 0 1px 0 #fff,0 2px 0 #e3d6bf;padding:12px 14px;box-sizing:border-box;display:flex;flex-direction:column;gap:9px;">
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;">
+            <sc-for list="{{ miniBtns }}" as="mb" hint-placeholder-count="4"><button onClick="{{ mb.onClick }}" style="{{ mb.style }}"><img src="{{ mb.icon }}" style="height:12px;width:15px;object-fit:contain;image-rendering:pixelated;">{{ mb.label }}</button></sc-for>
+          </div>
+          <div onClick="{{ miniClick }}" style="position:relative;width:100%;aspect-ratio:1400/800;background:#262848;border-radius:8px;overflow:hidden;cursor:pointer;box-shadow:inset 0 0 0 2px #3a3c63;">
+            <sc-for list="{{ miniRects }}" as="mr" hint-placeholder-count="0"><div style="{{ mr.style }}"></div></sc-for>
+            <sc-for list="{{ miniHeat }}" as="mh" hint-placeholder-count="0"><div style="{{ mh.style }}"></div></sc-for>
+            <sc-for list="{{ miniDots }}" as="md" hint-placeholder-count="0"><div style="{{ md.style }}"><sc-if value="{{ md.isMe }}" hint-placeholder-val="{{ false }}"><span style="position:absolute;inset:-2px;border-radius:50%;border:2px solid #b3a9ee;animation:ssPulse 1.6s ease-out infinite;"></span></sc-if></div></sc-for>
+            <div style="{{ miniView }}"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:#8a8499;justify-content:center;">
+            <sc-if value="{{ miniOn }}" hint-placeholder-val="{{ false }}">{{ miniLo }}<span style="width:110px;height:7px;border-radius:2px;background:linear-gradient(90deg,#5aa9e0,#7cc5a0,#f0c04a,#f08a3c,#e5534b);"></span>{{ miniHi }}</sc-if>
+            <sc-if value="{{ miniOff }}" hint-placeholder-val="{{ true }}">감각을 고르면 동료들이 공유한 수치가 보여요</sc-if>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isWelcome }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="02 스페이스 입장" style="position:absolute;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(30,31,60,.45);">
+    <div style="width:440px;background:#fbf7ef;border-radius:22px;padding:30px 30px 26px;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff,0 30px 70px -20px rgba(0,0,0,.7);display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;">
+      <div style="display:flex;align-items:flex-end;">
+        <sc-for list="{{ welcomeHeads }}" as="h" hint-placeholder-count="5"><span style="width:48px;height:48px;border-radius:14px;overflow:hidden;background:#ece8fb;border:3px solid #fbf7ef;margin-left:-10px;display:block;"><img src="{{ h }}" style="width:54px;height:84px;margin:-8px 0 0 -3px;image-rendering:pixelated;display:block;"></span></sc-for>
+      </div>
+      <span style="font:12px Galmuri11;color:#5b4fc9;background:#ece8fb;padding:5px 10px;border-radius:6px;">센스컴퍼니 · 3층 사무실</span>
+      <div style="font-size:24px;font-weight:800;letter-spacing:-0.5px;">안녕하세요, {{ me.name }}님!</div>
+      <div style="font-size:14.5px;line-height:1.6;color:#6e6a84;">동료 {{ teamCount }}명이 이미 사무실에 있어요.<br>프로필을 만들고 내 자리에 앉아볼까요?</div>
+      <button onClick="{{ goInfo }}" style="width:100%;height:52px;margin-top:6px;border:none;border-radius:12px;background:#2b2d55;color:#fff;font-size:16px;font-weight:700;cursor:pointer;box-shadow:inset 0 -4px 0 #17183a,inset 0 1px 0 rgba(255,255,255,.16);" style-active="transform:translateY(2px);">프로필 설정하기</button>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ isInfo }}" hint-placeholder-val="{{ false }}">
+  <div data-screen-label="03 프로필 설정 1" style="position:absolute;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;background:rgba(30,31,60,.45);">
+    <div style="width:460px;background:#fbf7ef;border-radius:22px;padding:26px 28px;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff,0 30px 70px -20px rgba(0,0,0,.7);display:flex;flex-direction:column;gap:18px;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;">
+        <sc-for list="{{ obSteps }}" as="st" hint-placeholder-count="3">
+          <sc-if value="{{ st.line }}" hint-placeholder-val="{{ false }}"><span style="width:44px;height:2px;background:#e2d6c2;"></span></sc-if>
+          <span style="display:flex;align-items:center;gap:7px;"><span style="{{ st.numStyle }}">{{ st.n }}</span><span style="{{ st.labelStyle }}">{{ st.label }}</span></span>
+        </sc-for>
+      </div>
+      <div style="font-size:19px;font-weight:800;">기본 정보</div>
+      <label style="display:flex;flex-direction:column;gap:7px;">
+        <span style="display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700;color:#5d5870;">이름<span style="font-size:11.5px;font-weight:600;color:#5b4fc9;">초대장에서 가져왔어요</span></span>
+        <input value="{{ me.name }}" onChange="{{ onName }}" style="height:46px;border:1.5px solid #e2d6c2;border-radius:11px;padding:0 14px;font-size:15px;outline:none;background:#fff;box-shadow:inset 0 2px 0 #f6f0e5;">
+      </label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <sc-for list="{{ infoSelects }}" as="sel" hint-placeholder-count="2">
+          <label style="display:flex;flex-direction:column;gap:7px;">
+            <span style="font-size:13px;font-weight:700;color:#5d5870;">{{ sel.label }}</span>
+            <span style="position:relative;display:block;">
+              <select onChange="{{ sel.onChange }}" style="width:100%;height:46px;border:1.5px solid #e2d6c2;border-radius:11px;padding:0 34px 0 14px;font-size:14.5px;outline:none;background:#fff;appearance:none;-webkit-appearance:none;cursor:pointer;box-shadow:inset 0 2px 0 #f6f0e5;">
+                <sc-for list="{{ sel.options }}" as="o" hint-placeholder-count="3"><option value="{{ o.v }}" selected="{{ o.sel }}">{{ o.v }}</option></sc-for>
+              </select>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6e6a84" stroke-width="2.6" stroke-linecap="round" style="position:absolute;right:12px;top:16px;pointer-events:none;"><path d="m6 9 6 6 6-6"></path></svg>
+            </span>
+          </label>
+        </sc-for>
+      </div>
+      <button onClick="{{ goChar }}" style="height:50px;border:none;border-radius:12px;background:#2b2d55;color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:inset 0 -4px 0 #17183a,inset 0 1px 0 rgba(255,255,255,.16);" style-active="transform:translateY(2px);">확인</button>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showEditor }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeEditorBackdrop }}" style="position:absolute;inset:0;z-index:220;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:24px;box-sizing:border-box;background:{{ editorBackdrop }};">
+    <sc-if value="{{ edOnboard }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:999px;background:rgba(251,247,239,.95);box-shadow:0 0 0 1.5px #3a3c63;">
+        <sc-for list="{{ obSteps }}" as="st" hint-placeholder-count="3">
+          <sc-if value="{{ st.line }}" hint-placeholder-val="{{ false }}"><span style="width:36px;height:2px;background:#e2d6c2;"></span></sc-if>
+          <span style="display:flex;align-items:center;gap:7px;"><span style="{{ st.numStyle }}">{{ st.n }}</span><span style="{{ st.labelStyle }}">{{ st.label }}</span></span>
+        </sc-for>
+      </div>
+    </sc-if>
+    <div data-screen-label="04 캐릭터 설정" onClick="{{ stop }}" style="width:min(860px,100%);background:#fbf7ef;border-radius:22px;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff,0 30px 70px -20px rgba(0,0,0,.7);display:flex;flex-direction:column;overflow:hidden;">
+      <div style="display:flex;align-items:center;gap:14px;padding:20px 24px 14px;border-bottom:1px solid #efe6d5;">
+        <div style="display:flex;flex-direction:column;gap:3px;flex:1;"><div style="font-size:20px;font-weight:800;letter-spacing:-0.4px;">{{ ed.title }}</div><div style="font-size:13px;color:#8a8499;">{{ ed.sub }}</div></div>
+        <sc-if value="{{ edClosable }}" hint-placeholder-val="{{ true }}"><button onClick="{{ closeModal }}" style="width:34px;height:34px;border-radius:10px;border:1.5px solid #e2d6c2;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4a4560;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button></sc-if>
+      </div>
+      <div style="padding:20px 24px;min-height:380px;display:flex;gap:20px;box-sizing:border-box;">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:14px;">
+          <sc-if value="{{ ed.isFace }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:13px;font-weight:800;color:#4a4560;">머리 모양</div>
+            <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;">
+              <sc-for list="{{ ed.heads }}" as="o" hint-placeholder-count="6"><button onClick="{{ o.onClick }}" style="{{ o.style }}"><span style="width:56px;height:52px;overflow:hidden;display:block;"><img src="{{ o.img }}" style="width:72px;height:112px;margin:-10px 0 0 -8px;image-rendering:pixelated;display:block;"></span></button></sc-for>
+            </div>
+            <sc-for list="{{ ed.swRows }}" as="row" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <span style="width:58px;font-size:13px;font-weight:800;color:#4a4560;">{{ row.label }}</span>
+                <span style="display:flex;gap:8px;flex-wrap:wrap;"><sc-for list="{{ row.sw }}" as="sw" hint-placeholder-count="6"><button onClick="{{ sw.onClick }}" style="{{ sw.style }}"></button></sc-for></span>
+              </div>
+            </sc-for>
+          </sc-if>
+          <sc-if value="{{ ed.isOutfit }}" hint-placeholder-val="{{ false }}">
+            <div style="display:flex;gap:6px;">
+              <sc-for list="{{ ed.outTabs }}" as="t" hint-placeholder-count="2"><button onClick="{{ t.onClick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for>
+            </div>
+            <sc-if value="{{ ed.isBasic }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:13px;font-weight:800;color:#4a4560;">성별</span>
+                <span style="display:grid;grid-template-columns:1fr 1fr;width:200px;background:#efe6d5;border-radius:10px;padding:3px;">
+                  <sc-for list="{{ ed.genders }}" as="g" hint-placeholder-count="2"><button onClick="{{ g.onClick }}" style="{{ g.style }}">{{ g.label }}</button></sc-for>
+                </span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;">
+                <sc-for list="{{ ed.outfits }}" as="o" hint-placeholder-count="6"><button onClick="{{ o.onClick }}" style="{{ o.style }}"><img src="{{ o.img }}" style="width:45px;height:70px;image-rendering:pixelated;"></button></sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ ed.isSpecial }}" hint-placeholder-val="{{ false }}">
+              <sc-for list="{{ ed.specialGroups }}" as="grp" hint-placeholder-count="2">
+                <div style="font-size:12.5px;font-weight:800;color:#8a8499;">{{ grp.label }}</div>
+                <div style="display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;">
+                  <sc-for list="{{ grp.items }}" as="o" hint-placeholder-count="4"><button onClick="{{ o.onClick }}" style="{{ o.style }}"><img src="{{ o.img }}" style="width:45px;height:70px;image-rendering:pixelated;"><span style="font-size:12px;font-weight:800;color:#4a4560;">{{ o.name }}</span></button></sc-for>
+                </div>
+              </sc-for>
+            </sc-if>
+          </sc-if>
+        </div>
+        <sc-if value="{{ ed.showPreview }}" hint-placeholder-val="{{ false }}">
+          <div style="width:200px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <span style="font:12px Galmuri11;color:#5b4fc9;padding:4px 10px;border-radius:6px;background:#ece8fb;border-bottom:2px solid #8b7fe0;">미리보기</span>
+            <div style="width:100%;flex:1;min-height:230px;border-radius:14px;background-color:#fbf8f2;background-image:linear-gradient(#efe8da 1px,transparent 1px),linear-gradient(90deg,#efe8da 1px,transparent 1px);background-size:10px 10px;border:1.5px solid #e7dcc8;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 #ece2cf;"><img src="{{ ed.preview }}" style="width:108px;height:168px;image-rendering:pixelated;"></div>
+            <sc-if value="{{ ed.showTools }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;gap:10px;">
+                <button onClick="{{ ed.reset }}" title="처음으로" style="width:44px;height:40px;border-radius:11px;border:1.5px solid #e2d6c2;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4a4560;box-shadow:inset 0 -3px 0 #efe6d5;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-3-6.2"></path><path d="M20 4v5h-5"></path></svg></button>
+                <button onClick="{{ ed.shuffle }}" title="랜덤" style="width:44px;height:40px;border-radius:11px;border:1.5px solid #e2d6c2;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4a4560;box-shadow:inset 0 -3px 0 #efe6d5;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3c5 0 5 10 10 10h3"></path><path d="M4 17h3c2 0 3-1.5 4-3.5M13 9.5c1-2 2-2.5 4-2.5h3"></path><path d="m18 4 3 3-3 3M18 14l3 3-3 3"></path></svg></button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+      <sc-if value="{{ ed.showNav }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:12px;padding:0 24px 22px;">
+          <button onClick="{{ ed.prev }}" style="flex:0 0 30%;height:50px;border-radius:12px;background:#f3ead8;border:1.5px solid #dccdb2;font-size:15px;font-weight:700;color:#4a4560;cursor:pointer;box-shadow:inset 0 -3px 0 #e2d4ba,inset 0 1px 0 #fff;" style-active="transform:translateY(1px);">{{ ed.prevLabel }}</button>
+          <button onClick="{{ ed.next }}" style="{{ ed.nextStyle }}" style-active="transform:translateY(2px);">{{ ed.nextLabel }}</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showCard }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeModal }}" style="position:absolute;inset:0;background:rgba(30,31,60,.55);display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;">
+    <div data-screen-label="05 감각 카드" onClick="{{ stop }}" style="width:min(780px,100%);background:#fbf7ef;border-radius:22px;padding:14px;box-sizing:border-box;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff,0 30px 70px -20px rgba(0,0,0,.7);display:grid;grid-template-columns:220px minmax(0,1fr);gap:14px;position:relative;">
+      <button onClick="{{ closeModal }}" style="position:absolute;right:14px;top:14px;width:34px;height:34px;border-radius:10px;border:1.5px solid #e2d6c2;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4a4560;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+      <div style="background:#f3ecdf;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div style="height:180px;border-radius:12px;background-color:#fbf8f2;background-image:linear-gradient(#efe8da 1px,transparent 1px),linear-gradient(90deg,#efe8da 1px,transparent 1px);background-size:10px 10px;border:1.5px solid #e7dcc8;display:flex;align-items:center;justify-content:center;"><img src="{{ card.img }}" style="width:90px;height:140px;image-rendering:pixelated;"></div>
+        <div style="font-size:21px;font-weight:800;">{{ card.name }}</div>
+        <div style="font-size:13px;color:#6e6a84;margin-top:-6px;">{{ card.role }} · 3F {{ card.seat }}</div>
+        <span style="{{ card.chip }}"><span style="{{ card.dotStyle }}"></span>{{ card.statusFull }}</span>
+        <sc-if value="{{ card.isMe }}" hint-placeholder-val="{{ false }}"><button onClick="{{ editChar }}" style="margin-top:auto;height:40px;border-radius:11px;background:#fff;border:1.5px solid #e2d6c2;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:inset 0 -3px 0 #efe6d5;">캐릭터 수정</button></sc-if>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:12px;padding:8px 4px 4px;">
+        <div style="font-size:17px;font-weight:800;">{{ card.title }}</div>
+        <div style="background:#fff;border:1px solid #ece2cf;border-radius:14px;padding:6px 16px;box-shadow:0 2px 0 #ece2cf;">
+          <sc-for list="{{ card.sensi }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:12px;height:40px;">
+              <img src="{{ r.icon }}" style="height:17px;width:21px;object-fit:contain;image-rendering:pixelated;">
+              <span style="width:84px;font-size:13.5px;font-weight:700;color:#4a4560;">{{ r.label }}</span>
+              <span style="display:flex;gap:7px;"><sc-for list="{{ r.dots }}" as="d" hint-placeholder-count="5"><button onClick="{{ d.onClick }}" style="{{ d.style }}"></button></sc-for></span>
+              <span style="{{ r.valStyle }}">{{ r.valText }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#fff;border:1px solid #ece2cf;border-radius:14px;padding:12px 16px;box-shadow:0 2px 0 #ece2cf;display:flex;flex-direction:column;gap:6px;">
+          <span style="font-size:13.5px;font-weight:800;">추가 설명</span>
+          <sc-if value="{{ card.isMe }}" hint-placeholder-val="{{ false }}"><textarea value="{{ me.desc }}" onChange="{{ onDesc }}" rows="2" style="border:1.5px solid #e2d6c2;border-radius:10px;padding:9px 12px;font-size:13.5px;line-height:1.55;outline:none;background:#fffdf9;resize:none;"></textarea></sc-if>
+          <sc-if value="{{ card.notMe }}" hint-placeholder-val="{{ true }}"><div style="font-size:13.5px;line-height:1.6;color:#4a4560;">{{ card.desc }}</div></sc-if>
+        </div>
+        <div style="background:#fff;border:1px solid #ece2cf;border-radius:14px;padding:12px 16px;box-shadow:0 2px 0 #ece2cf;display:grid;grid-template-columns:1fr 1fr;gap:6px 22px;">
+          <sc-for list="{{ card.senses }}" as="r" hint-placeholder-count="6">
+            <div style="display:flex;align-items:center;gap:8px;height:24px;">
+              <img src="{{ r.icon }}" style="height:14px;width:17px;object-fit:contain;image-rendering:pixelated;">
+              <span style="width:56px;font-size:12.5px;font-weight:600;color:#4a4560;">{{ r.label }}</span>
+              <span style="flex:1;height:6px;border-radius:3px;background:#ece4d5;position:relative;overflow:hidden;"><span style="{{ r.fill }}"></span></span>
+              <span style="{{ r.valStyle }}">{{ r.valText }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ showSettings }}" hint-placeholder-val="{{ false }}">
+  <div onClick="{{ closeModal }}" style="position:absolute;inset:0;background:{{ settingsBackdrop }};display:flex;align-items:center;justify-content:center;z-index:200;padding:24px;">
+    <div data-screen-label="06 알림 설정" onClick="{{ stop }}" style="width:min(720px,100%);max-height:100%;overflow:auto;background:#fbf7ef;border-radius:22px;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff,0 30px 70px -20px rgba(0,0,0,.7);display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;gap:12px;padding:20px 24px 14px;border-bottom:1px solid #efe6d5;">
+        <div style="flex:1;display:flex;flex-direction:column;gap:3px;"><span style="font-size:12.5px;font-weight:700;color:#8a8499;">프로필 › 설정</span><span style="font-size:20px;font-weight:800;">알림 설정</span></div>
+        <button onClick="{{ closeModal }}" style="width:34px;height:34px;border-radius:10px;border:1.5px solid #e2d6c2;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#4a4560;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg></button>
+      </div>
+      <div style="padding:18px 24px;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;background:#fff;border:1px solid #ece2cf;box-shadow:0 2px 0 #ece2cf;">
+          <span style="display:flex;flex-direction:column;gap:3px;flex:1;"><span style="font-size:15px;font-weight:800;">웹 알림 받기</span><span style="font-size:12.5px;color:#8a8499;">선택한 알림만 브라우저 알림으로 보내드려요 · 권한: <b style="{{ permStyle }}">{{ permLabel }}</b></span></span>
+          <sc-if value="{{ needPerm }}" hint-placeholder-val="{{ false }}"><button onClick="{{ askPerm }}" style="height:34px;padding:0 12px;border-radius:9px;border:1.5px solid #8b7fe0;background:#ece8fb;color:#4b3fb8;font-size:12.5px;font-weight:700;cursor:pointer;">권한 허용하기</button></sc-if>
+          <button onClick="{{ toggleMaster }}" style="{{ masterStyle }}"><span style="{{ masterKnob }}"></span></button>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <span style="font-size:13px;font-weight:800;color:#5d5870;">어떤 알림을 받을까요?</span>
+          <div style="background:#fff;border:1px solid #ece2cf;border-radius:14px;box-shadow:0 2px 0 #ece2cf;overflow:hidden;">
+            <sc-for list="{{ notifRows }}" as="nr" hint-placeholder-count="6">
+              <button onClick="{{ nr.onClick }}" style="{{ nr.rowStyle }}" style-hover="background:#faf7f0;">
+                <span style="width:34px;height:34px;border-radius:10px;background:#f6f0e5;display:flex;align-items:center;justify-content:center;flex-shrink:0;"><img src="{{ nr.icon }}" style="height:15px;width:19px;object-fit:contain;image-rendering:pixelated;"></span>
+                <span style="flex:1;display:flex;flex-direction:column;gap:2px;text-align:left;"><span style="font-size:14px;font-weight:800;">{{ nr.title }}</span><span style="font-size:12.5px;color:#8a8499;">{{ nr.desc }}</span></span>
+                <span style="{{ nr.box }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <span style="font-size:13px;font-weight:800;color:#5d5870;width:72px;">받는 범위</span>
+          <span style="display:grid;grid-template-columns:repeat(3,1fr);flex:1;background:#efe6d5;border-radius:10px;padding:3px;">
+            <sc-for list="{{ scopeBtns }}" as="sb" hint-placeholder-count="3"><button onClick="{{ sb.onClick }}" style="{{ sb.style }}">{{ sb.label }}</button></sc-for>
+          </span>
+        </div>
+        <button onClick="{{ toggleQuiet }}" style="display:flex;align-items:center;gap:10px;background:none;border:none;padding:0;cursor:pointer;font-size:13.5px;color:#4a4560;font-weight:600;">
+          <span style="{{ quietBox }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="m5 12 5 5 9-10"></path></svg></span>'집중 근무 중'일 때는 알림 잠시 멈추기
+        </button>
+      </div>
+      <div style="display:flex;gap:10px;padding:0 24px 22px;">
+        <button onClick="{{ testNotif }}" style="white-space:nowrap;height:48px;padding:0 18px;border-radius:12px;background:#f3ead8;border:1.5px solid #dccdb2;font-size:14px;font-weight:700;color:#4a4560;cursor:pointer;box-shadow:inset 0 -3px 0 #e2d4ba;">테스트 알림 보내기</button>
+        <button onClick="{{ saveSettings }}" style="flex:1;height:48px;border:none;border-radius:12px;background:#2b2d55;color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:inset 0 -4px 0 #17183a;">저장</button>
+      </div>
+    </div>
+  </div>
+</sc-if>
+
+<sc-if value="{{ hasToast }}" hint-placeholder-val="{{ false }}">
+  <div style="position:absolute;left:50%;top:76px;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:11px 16px;border-radius:12px;background:#2b2d55;color:#fff;font-size:14px;font-weight:700;box-shadow:inset 0 -3px 0 #17183a,0 16px 30px -12px rgba(23,24,58,.7);z-index:400;white-space:nowrap;"><span style="font:12px Galmuri11;color:#f0c04a;">✦</span>{{ toast }}</div>
+</sc-if>
+</div>
+</x-dc>
+<!-- APP_LOGIC -->
+</body>
+</html>

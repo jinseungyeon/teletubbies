@@ -1,0 +1,1 @@
+export default function OfficeBanner() { return <img className="office-banner" src="assets/home/office.png" alt="감각 말풍선을 나누는 픽셀 오피스" />; }

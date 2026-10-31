@@ -1,0 +1,18 @@
+/* Only requested reference surfaces are styled here. Existing hub panels use styles.css. */
+.hub-map.reference-map-host{overflow:hidden;position:relative}
+.reference-map-frame{display:block;width:100%;height:100%;border:0;min-height:0}
+.reference-dialog{width:min(980px,100%);height:min(800px,calc(100dvh - 32px));outline:none}
+.reference-modal-frame{width:100%;height:100%;border:0;display:block;background:transparent}
+.reference-character-page{min-height:100dvh;background:#262848}
+.reference-auth{min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:28px;background:radial-gradient(#33366a 1.5px,transparent 1.5px) 0 0/24px 24px #262848;font-family:Pretendard,sans-serif;color:#2e2a44}
+.reference-auth-card{width:460px;max-width:100%;background:#fbf7ef;border-radius:22px;overflow:hidden;box-shadow:0 0 0 2px #3b3e6e,0 30px 70px -20px #0009}
+.reference-auth-hero{height:140px;position:relative;background:url('/src/assets/tiles/marble.png') 0 0/128px 128px;border-bottom:3px solid #2e2433;overflow:hidden;image-rendering:pixelated}
+.reference-wordmark{position:absolute;left:22px;top:20px;display:inline-flex;align-items:center;gap:9px;padding:10px 14px;border:3px solid #2e2433;border-radius:5px;background:#fbf7ef;box-shadow:0 4px 0 #2e2433;font:700 21px Galmuri11;letter-spacing:2px;z-index:2}.reference-wordmark .rw-mark{display:grid;place-items:center;width:26px;height:26px;border-radius:6px;background:#2b2d55;color:#f0c04a;box-shadow:0 2px 0 #1c1d3d;letter-spacing:0}.reference-wordmark span{color:#f0c04a}
+.reference-auth-person{position:absolute;left:270px;top:28px}.reference-auth-person.second{left:350px}.reference-auth-hero>img{position:absolute;left:250px;top:66px;width:168px;height:108px}
+.reference-auth-body{padding:24px 30px;display:flex;flex-direction:column;gap:15px}.reference-auth-body h1{font-size:23px;margin:0;font-weight:800}.reference-auth-body p{margin:0;font-size:13px;line-height:1.6;color:#8a8499}
+.reference-auth-tabs{display:flex;gap:4px;background:#efe6d5;padding:4px;border-radius:11px}.reference-auth-tabs a{flex:1;padding:10px;border-radius:8px;font-weight:800;text-align:center;font-size:14px;color:#5d5870}.reference-auth-tabs a.active{background:white;box-shadow:0 2px 0 #dccdb2}
+.reference-auth-body form{display:flex;flex-direction:column;gap:12px}.reference-auth-body label{display:flex;flex-direction:column;gap:6px;margin:0;font-size:13px;font-weight:700;color:#5d5870}.reference-auth-body input{height:44px;padding:0 14px;border:1.5px solid #e2d6c2;border-radius:11px;background:#fff;box-shadow:inset 0 2px 0 #f6f0e5;font-size:14px}.reference-auth-body .primary{height:48px;border:0;border-radius:12px;background:#2b2d55;color:#fff;font-size:15px;font-weight:700;box-shadow:inset 0 -4px 0 #17183a}.reference-auth-body .secondary{height:42px;border:1.5px solid #dccdb2;border-radius:11px;background:#f3ead8;font-weight:700;box-shadow:inset 0 -3px 0 #e2d4ba}.reference-auth-body .form-error{color:#c43f4d;min-height:18px}.reference-auth-body .reference-demo-note{font-size:11px;text-align:center}
+@media(max-width:700px){.reference-auth{padding:16px}.reference-auth-body{padding:22px}}
+
+/* Sensory card keeps the reference layout on desktop and stacks on phones. */
+@media(max-width:760px){.ssc-backdrop{padding:14px !important}.ssc-backdrop>section{grid-template-columns:1fr !important;max-height:calc(100dvh - 28px) !important}}

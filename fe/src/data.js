@@ -2,14 +2,14 @@ import { validateCharacter, normalizeCharacter } from './character.js';
 // Replace this adapter with Supabase calls. UI modules never access storage directly.
 export const SENSITIVITY = ['매우 둔감', '둔감', '보통', '민감', '매우 민감'];
 export const SENSES = [
-  { key: 'temperature', name: '온도', icon: 'thermometer', color: '#d78b67', labels: ['매우 추움', '추움', '적당함', '더움', '매우 더움'] },
-  { key: 'humidity', name: '습도', icon: 'drop', color: '#6c9bb9', labels: ['매우 건조함', '건조함', '적당함', '습함', '매우 습함'] },
-  { key: 'noise', name: '소음', icon: 'sound', color: '#cd8294', labels: ['매우 조용함', '조용함', '보통', '시끄러움', '매우 시끄러움'] },
-  { key: 'smell', name: '냄새', icon: 'leaf', color: '#79a78a', labels: ['없음', '약함', '보통', '강함', '매우 강함'] },
-  { key: 'discomfort', name: '불쾌 지수', icon: 'sun', color: '#a08abb', labels: ['매우 쾌적함', '쾌적함', '보통', '불편함', '매우 불편함'] },
-  { key: 'crowding', name: '혼잡도', icon: 'users', color: '#8b8da5', labels: ['매우 한산함', '한산함', '보통', '붐빔', '매우 붐빔'] },
+  { key: 'temperature', name: '온도', icon: 'temp', color: '#d78b67', labels: ['매우 추움', '추움', '적당함', '더움', '매우 더움'] },
+  { key: 'humidity', name: '습도', icon: 'humid', color: '#6c9bb9', labels: ['매우 건조함', '건조함', '적당함', '습함', '매우 습함'] },
+  { key: 'noise', name: '소음', icon: 'noise', color: '#cd8294', labels: ['매우 조용함', '조용함', '보통', '시끄러움', '매우 시끄러움'] },
+  { key: 'smell', name: '냄새', icon: 'smell', color: '#79a78a', labels: ['없음', '약함', '보통', '강함', '매우 강함'] },
+  { key: 'discomfort', name: '불쾌 지수', icon: 'discomfort', color: '#a08abb', labels: ['매우 쾌적함', '쾌적함', '보통', '불편함', '매우 불편함'] },
+  { key: 'crowding', name: '혼잡도', icon: 'crowd', color: '#8b8da5', labels: ['매우 한산함', '한산함', '보통', '붐빔', '매우 붐빔'] },
 ];
-export const TRAITS = [{key:'visual',name:'시각',icon:'eye'}, {key:'auditory',name:'청각',icon:'sound'}, {key:'olfactory',name:'후각',icon:'leaf'}];
+export const TRAITS = [{key:'visual',name:'시각',icon:'eye'}, {key:'auditory',name:'청각',icon:'ear'}, {key:'olfactory',name:'후각',icon:'nose'}];
 export const STATUS = { working: '출근', away: '자리 비움', offline: '퇴근' };
 export const REASONS = ['점심', '미팅', '외근'];
 export const COMPANY = '온유 스튜디오';
@@ -22,11 +22,21 @@ export const onFloor = (x, y) => x >= FLOOR.left && x <= FLOOR.right && y >= FLO
 // Shared desks; seat y is where a seated character is drawn (centre at y+36).
 export const DESK_CLUSTERS = [{y:126,xs:[402,486]},{y:126,xs:[662,746]},{y:126,xs:[882,966,1050]},{y:286,xs:[372,456]},{y:286,xs:[642,726]},{y:446,xs:[402,486]},{y:446,xs:[662,746]}];
 export const SEATS = DESK_CLUSTERS.flatMap(c => c.xs.map(x => ({ x, y: c.y }))).map((s, i) => ({ id: `A-${String(i+1).padStart(2,'0')}`, ...s }));
-export const QUICK_STATUS = [['☕','커피'],['🍴','식사'],['❤️','하트'],['💻','노트북'],['📖','책'],['🎉','축하'],['🌱','새싹'],['🏋️','운동'],['📄','문서'],['💾','저장'],['🐱','고양이'],['👁️','눈']];
+// The eight quick statuses from the SENSPACE design: icon, message, and whether
+// it is a sensitivity alert (shown in red to colleagues).
+export const QUICK_STATUS = [['coffee','커피 마실 사람~'],['mute','지금 소리에 예민해요',true],['hot','좀 더워요',true],['smell','냄새에 예민해요',true],['focus','집중 근무 중'],['rest','조금 쉬어요'],['help','도움이 필요해요'],['heart','오늘 기분 좋아요']];
+export const ALERT_ICONS = new Set(QUICK_STATUS.filter(q => q[2]).map(q => q[0]));
+// Older saves stored emoji; map them to the flat icon keys.
+// Icons saved by earlier versions map onto the nearest of the eight.
+export const LEGACY_ICONS = {'☕':'coffee','🍴':'coffee','❤️':'heart','💻':'focus','📖':'help','🎉':'heart','🌱':'focus','🏋️':'rest','📄':'focus','💾':'focus','🐱':'rest','👁️':'focus',
+  utensils:'coffee',laptop:'focus',book:'help',party:'heart',sprout:'focus',dumbbell:'rest',doc:'focus',save:'focus',cat:'rest',eye:'focus',
+  lunch:'coffee',work:'focus',meeting:'focus',phone:'help',outside:'rest'};
+export const iconKey = icon => LEGACY_ICONS[icon] || icon || '';
 const KEY = 'sensory-fit-demo-v1';
 export function charCount(text) { return [...new Intl.Segmenter('ko', { granularity: 'grapheme' }).segment(text)].length; }
 export function localDay(date = new Date()) { return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year:'numeric',month:'2-digit',day:'2-digit' }).format(new Date(date)); }
-export function currentSenses(user, now = new Date()) { return user.status === 'working' && user.sensesAt && localDay(user.sensesAt) === localDay(now) ? user.senses : {}; }
+export function todaySenses(user, now = new Date()) { return user.sensesAt && localDay(user.sensesAt) === localDay(now) ? user.senses : {}; }
+export function currentSenses(user, now = new Date()) { return user.status !== 'offline' ? todaySenses(user, now) : {}; }
 export function validateProfile(profile) {
   if (!profile.name?.trim() || !profile.role?.trim()) throw new Error('이름과 직책을 입력해 주세요.');
   if (!FLOORS.includes(Number(profile.floor)) || !SEATS.some(s=>s.id===profile.seat)) throw new Error('층과 좌석을 선택해 주세요.');
@@ -45,7 +55,7 @@ function seed() {
     ['이수빈','서비스 기획자',6,'offline','','',3,'A-10'],
     ['윤지우','마케팅 매니저',7,'working','','오늘도 좋은 하루!',2,'A-01'],
   ];
-  return { session: null, users: profiles.map((p,i)=>({id:`demo-${i}`,name:p[0],role:p[1],avatar:p[2],status:p[3],reason:p[4],message:p[5],messageIcon:['☕','💻','','🌱','👁️','','','🎉'][i],floor:p[6],seat:p[7],email:i===0?'demo@sensory.fit':`colleague${i}@demo.local`,complete:true,sensitivity:{visual:3,auditory:i===4?5:4,olfactory:2},description:i===0?'작은 배려가 모이면 더 편안한 하루가 돼요.\n갑작스러운 큰 소리에는 조금 예민한 편이에요.':'집중할 때는 먼저 메시지로 알려주시면 좋아요.',senses:{temperature:i===3?4:3,humidity:3,noise:i===4?5:2,smell:1,discomfort:2,crowding:3},sensesAt:now,statusAt:now})) };
+  return { session: null, users: profiles.map((p,i)=>({id:`demo-${i}`,name:p[0],role:p[1],avatar:p[2],status:p[3],reason:p[4],message:p[5],messageIcon:['coffee','focus','','hot','mute','','','heart'][i],floor:p[6],seat:p[7],email:i===0?'demo@sensory.fit':`colleague${i}@demo.local`,complete:true,sensitivity:{visual:3,auditory:i===4?5:4,olfactory:2},description:i===0?'작은 배려가 모이면 더 편안한 하루가 돼요.\n갑작스러운 큰 소리에는 조금 예민한 편이에요.':'집중할 때는 먼저 메시지로 알려주시면 좋아요.',senses:{temperature:i===3?4:3,humidity:3,noise:i===4?5:2,smell:1,discomfort:2,crowding:3},sensesAt:now,statusAt:now})) };
 }
 export function createAdapter(storage) {
   function read() { const raw=storage.getItem(KEY); if(!raw) {const value=seed(); write(value); return value;} try {const d=JSON.parse(raw);if(!Array.isArray(d.users))throw new Error();return d;} catch {throw new Error('저장된 데모 데이터를 읽지 못했어요. 브라우저 사이트 데이터를 확인해 주세요.');} }
@@ -57,9 +67,22 @@ export function createAdapter(storage) {
     async login(email) {const d=read(), u=d.users.find(u=>u.email===email.trim().toLowerCase());if(!u)throw new Error('이 브라우저에 등록된 계정이 없어요. 회원가입 또는 데모 입장을 이용해 주세요.');d.session=u.id;write(d);return u;},
     async signup({name,email,code}) {const d=read();if(code.trim().toUpperCase()!=='ONYU2026')throw new Error('데모 초대 코드 ONYU2026을 입력해 주세요.');if(d.users.some(u=>u.email===email.trim().toLowerCase()))throw new Error('이미 등록된 이메일이에요.');const u={id:crypto.randomUUID(),name:name.trim(),email:email.trim().toLowerCase(),role:'',avatar:0,floor:3,seat:'',complete:false,status:'offline',reason:'',message:'',sensitivity:{},description:'',senses:{},sensesAt:null};d.users.push(u);d.session=u.id;write(d);return u;},
     async logout() {const d=read();d.session=null;write(d);},
+    async completeOnboarding({name,role}) {if(!name?.trim()||!role?.trim())throw new Error('이름과 직무를 입력해 주세요.');return update(u=>{u.name=name.trim();u.role=role.trim();u.complete=true;});},
+    async referenceCharacter(cfg) {
+      if(!cfg||!['bob','bun','long','short','twin','part'].includes(cfg.hair)||!['shirt','cardigan','hoodie','suit'].includes(cfg.outfit)||!['pants','skirt'].includes(cfg.bottom)||!['hairColor','eye','skin','top','pants'].every(k=>cfg[k]===undefined||/^#[0-9a-f]{6}$/i.test(cfg[k]))||!(cfg.special==null||['a_red','a_yellow','a_green','a_purple','bear','cat','frog','bunny'].includes(cfg.special)))throw new Error('캐릭터 설정을 확인해 주세요.');
+      return update(u=>{u.referenceCharacter=JSON.parse(JSON.stringify(cfg));if(!u.character)u.character=normalizeCharacter();});
+    },
+    async referenceSeat(seat) {
+      if(!/^[ABC]-(?:[1-9]|1[0-6])$/.test(seat))throw new Error('좌석을 확인해 주세요.');
+      const d=read(),u=d.users.find(p=>p.id===d.session);if(!u)throw new Error('다시 로그인해 주세요.');
+      if(d.users.some(p=>p.id!==u.id&&p.floor===u.floor&&(p.referenceSeat||(p.seat||'').replace(/-0+(\d+)/,'-$1'))===seat))throw new Error('이미 사용 중인 자리예요.');
+      return update(p=>{p.referenceSeat=seat;});
+    },
     async profile(changes) {validateProfile(changes);const d=read(), u=d.users.find(u=>u.id===d.session);if(!u)throw new Error('다시 로그인해 주세요.');if(d.users.some(o=>o.id!==u.id&&o.complete&&o.floor===Number(changes.floor)&&o.seat===changes.seat))throw new Error('이미 배정된 좌석이에요. 다른 자리를 선택해 주세요.');Object.assign(u,{name:changes.name.trim(),role:changes.role.trim(),avatar:Number(changes.avatar),floor:Number(changes.floor),seat:changes.seat,sensitivity:changes.sensitivity,description:changes.description||'',complete:true});write(d);return u;},
     async character(look) {validateCharacter(look);return update(u=>{u.character=normalizeCharacter(look);});},
-    async status(status, reason='') {if(!STATUS[status] || status==='away'&&!REASONS.includes(reason))throw new Error('근태 상태를 확인해 주세요.');return update(u=>{u.status=status;u.reason=status==='away'?reason:'';u.statusAt=new Date().toISOString();if(status==='offline'){u.senses={};u.sensesAt=null;u.message='';u.messageIcon='';}});},
+    async status(status, reason='') {if(!STATUS[status] || status==='away'&&reason!==''&&!REASONS.includes(reason))throw new Error('근태 상태를 확인해 주세요.');return update(u=>{u.awayNote=status==='away'&&u.status==='away'?u.awayNote||'':'';u.status=status;u.reason=status==='away'?reason:'';u.statusAt=new Date().toISOString();if(status==='offline'){u.senses={};u.sensesAt=null;u.message='';u.messageIcon='';}});},
+    // Free-text detail while away, e.g. "16시 복귀" or "외근 후 바로 퇴근".
+    async awayNote(value) {if(charCount(value)>30)throw new Error('자리 비움 상세는 30자까지 입력할 수 있어요.');return update(u=>{if(u.status!=='away')throw new Error('자리 비움 상태에서만 적을 수 있어요.');u.awayNote=value.trim();});},
     async message(value, icon='') {if(charCount(value)>20)throw new Error('상태 메시지는 공백 포함 20자까지 입력할 수 있어요.');if(icon&&!QUICK_STATUS.some(([i])=>i===icon))throw new Error('상태 아이콘을 다시 선택해 주세요.');return update(u=>{u.message=value.trim();u.messageIcon=u.message?icon:'';});},
     async senses(values) {for(const [k,v] of Object.entries(values))if(!SENSES.some(s=>s.key===k)||!Number.isInteger(v)||v<1||v>5)throw new Error('감각은 1~5단계로 선택해 주세요.');return update(u=>{if(u.status==='offline')throw new Error('출근 후 현재 감각을 공유해 주세요.');u.senses=values;u.sensesAt=new Date().toISOString();});},
   };

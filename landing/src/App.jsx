@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
+import Why from './components/Why.jsx';
 import OfficeBanner from './components/OfficeBanner.jsx';
 import './reference.css';
 const scrollTo = id => document.getElementById(id)?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
@@ -18,6 +19,7 @@ export default function App() {
     <main id="main">
       <Hero goContact={goContact} goFeatures={() => scrollTo('features')} />
       <OfficeBanner />
+      <Why />
     </main>
     <dialog ref={loginDialog} className="login-dialog" aria-labelledby="login-title">
       <h2 id="login-title">조직 로그인 안내</h2>

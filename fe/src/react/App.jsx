@@ -1,13 +1,18 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { SESSION } from '../session.js';
-import AuthPage from './AuthPage.jsx';
+import EntryPage from './EntryPage.jsx';
 import OfficePage from './OfficePage.jsx';
 import ProfilePage from './ProfilePage.jsx';
 import EditorRoute from './EditorRoute.jsx';
 
 const clone = value => JSON.parse(JSON.stringify(value));
-const AUTH_ROUTES = ['/login', '/signup'];
-const INCOMPLETE_ALLOWED = ['/onboarding', '/character', '/login', '/signup'];
+
+// Each person's private link is /enter/<token> (a ?t= query is accepted too).
+function readEntryToken() {
+  const match = location.pathname.match(/^\/enter\/([^/]+)\/?$/);
+  if (match) return decodeURIComponent(match[1]);
+  return new URLSearchParams(location.search).get('t') || '';
+}
 
 export default function App({ api }) {
   const [me, setMe] = useState(null);
@@ -16,6 +21,7 @@ export default function App({ api }) {
   const [route, setRoute] = useState(location.pathname);
   const [ready, setReady] = useState(false);
   const [fatal, setFatal] = useState('');
+  const [entryError, setEntryError] = useState('');
   const [message, setMessage] = useState('');
   const [profileStash, setProfileStash] = useState(null);
   const toastTimer = useRef();
@@ -43,13 +49,16 @@ export default function App({ api }) {
 
   const applyRoute = useCallback(current => {
     let next = location.pathname;
-    if (!current && !AUTH_ROUTES.includes(next)) {
-      history.replaceState({}, '', '/login');
-      next = '/login';
-    }
-    if (current && !current.complete && !INCOMPLETE_ALLOWED.includes(next)) {
-      history.replaceState({}, '', '/onboarding');
-      next = '/onboarding';
+    if (!current) {
+      // Keep a failed /enter/<token> URL so reloading retries the same link.
+      if (next !== '/' && !next.startsWith('/enter')) history.replaceState({}, '', '/');
+      next = '/';
+    } else if (!current.complete) {
+      if (next !== '/office') history.replaceState({}, '', '/office');
+      next = '/office';
+    } else if (next === '/' || next === '/login' || next === '/signup' || next.startsWith('/enter')) {
+      history.replaceState({}, '', '/office');
+      next = '/office';
     }
     window.scrollTo(0, 0);
     setRoute(next);
@@ -69,6 +78,21 @@ export default function App({ api }) {
     let alive = true;
     (async () => {
       try {
+        let enterError = '';
+        const token = readEntryToken();
+        try {
+          if (token) {
+            await api.enter(token);
+            history.replaceState({}, '', '/office');
+          } else if (location.pathname === '/demo') {
+            await SESSION.api.enter('demo-entry');
+            history.replaceState({}, '', '/office');
+          }
+        } catch (error) {
+          enterError = error.message;
+        }
+        if (!alive) return;
+        if (enterError) setEntryError(enterError);
         const { m } = await sync();
         if (alive) applyRoute(m);
       } catch (error) {
@@ -78,28 +102,38 @@ export default function App({ api }) {
       }
     })();
     return () => { alive = false; clearTimeout(toastTimer.current); };
-  }, [sync, applyRoute]);
-
-  const afterAuth = useCallback(async () => {
-    const { m } = await sync();
-    await navigate(m?.complete ? '/office' : '/onboarding');
-  }, [sync, navigate]);
+  }, [api, sync, applyRoute]);
 
   const enterDemo = useCallback(async () => {
     try {
-      await SESSION.api.demo();
-      await afterAuth();
+      setEntryError('');
+      await SESSION.api.enter('demo-entry');
+      history.replaceState({}, '', '/office');
+      const { m } = await sync();
+      applyRoute(m);
     } catch (error) {
-      toast(error.message);
+      setEntryError(error.message);
     }
-  }, [afterAuth, toast]);
+  }, [sync, applyRoute]);
+
+  const enterLink = useCallback(async token => {
+    try {
+      setEntryError('');
+      await api.enter(token);
+      history.replaceState({}, '', '/office');
+      const { m } = await sync();
+      applyRoute(m);
+    } catch (error) {
+      setEntryError(error.message);
+    }
+  }, [api, sync, applyRoute]);
 
   const logout = useCallback(async () => {
     try {
       await SESSION.api.logout();
       SESSION.current = null;
       setMe(null);
-      await navigate('/login');
+      await navigate('/');
     } catch (error) {
       toast(error.message);
     }
@@ -115,11 +149,11 @@ export default function App({ api }) {
       if (document.hidden || !document.querySelector('.hub')) return;
       try {
         const { m } = await sync();
-        if (!m) await navigate('/login');
+        if (!m) await navigate('/');
       } catch (error) {
         toast(error.message);
       }
-    }, 15000);
+    }, 5000);
     return () => clearInterval(timer);
   }, [sync, navigate, toast]);
 
@@ -127,7 +161,7 @@ export default function App({ api }) {
     const onStorage = async () => {
       try {
         const { m } = await sync();
-        if (!m) await navigate('/login');
+        if (!m) await navigate('/');
       } catch (error) {
         toast(error.message);
       }
@@ -152,11 +186,11 @@ export default function App({ api }) {
   const onEditorHost = useCallback(async (type) => {
     if (type === 'saved') {
       const current = await refresh();
-      const target = current?.complete ? (profileStash ? '/profile' : '/office') : '/onboarding';
+      const target = current?.complete ? (profileStash ? '/profile' : '/office') : '/office';
       await navigate(target);
       toast('캐릭터를 저장했어요.');
     } else if (type === 'close') {
-      await navigate(me?.complete ? (profileStash ? '/profile' : '/office') : '/login');
+      await navigate(me?.complete ? (profileStash ? '/profile' : '/office') : '/office');
     }
   }, [refresh, navigate, profileStash, me, toast]);
 
@@ -172,9 +206,9 @@ export default function App({ api }) {
       </main>
     );
   } else if (ready) {
-    if (route === '/login' || route === '/signup') {
-      content = <AuthPage signup={route === '/signup'} api={api} onDone={afterAuth} onNavigate={navigate} onDemo={enterDemo} />;
-    } else if (route === '/character' && me) {
+    if (!me) {
+      content = <EntryPage error={entryError} onEnter={enterLink} onDemo={enterDemo} />;
+    } else if (route === '/character') {
       content = (
         <EditorRoute
           me={me}
@@ -185,22 +219,7 @@ export default function App({ api }) {
           office={officeProps}
         />
       );
-    } else if (route === '/onboarding' && me) {
-      content = (
-        <ProfilePage
-          api={api}
-          me={me}
-          people={people}
-          onboarding
-          profileStash={profileStash}
-          onConsumeStash={() => setProfileStash(null)}
-          navigate={navigate}
-          toast={toast}
-          onLogout={logout}
-          onEditCharacter={editCharacter}
-        />
-      );
-    } else if (route === '/profile' && me) {
+    } else if (route === '/profile') {
       content = (
         <ProfilePage
           api={api}
@@ -215,7 +234,7 @@ export default function App({ api }) {
           onEditCharacter={editCharacter}
         />
       );
-    } else if (me) {
+    } else {
       content = <OfficePage {...officeProps} />;
     }
   }

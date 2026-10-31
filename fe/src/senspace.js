@@ -3,7 +3,7 @@ const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAA
 const R = p => (window.__resources && window.__resources[p.replace(/[^a-z0-9]/gi, '_')]) || ('/src/' + p);
 const IC = k => R('assets/icons/' + k + '.png');
 const MW = 1400, MH = 800;
-const FS = { workdesk: [56, 36], workdesk_b: [56, 36], chair: [14, 16], chair_b: [14, 16], mtable_long: [40, 164], mchair_l: [16, 18], mchair_r: [16, 18], pillar_table: [30, 34], front_desk: [34, 128], wall_tv: [36, 24] };
+const FS = { workdesk: [56, 36], workdesk_b: [56, 36], chair: [14, 16], chair_b: [14, 16], mtable_long: [40, 164], mchair_l: [16, 18], mchair_r: [16, 18], pillar_table: [30, 34], front_desk: [34, 128], wall_tv: [36, 24], water_cooler: [14, 32], plant_small: [14, 18], table_round: [22, 24], stool: [14, 14] };
 const FURN = [];
 const add = (k, x, y, z) => { const [w, h] = FS[k]; FURN.push({ src: 'assets/furniture/' + k + '.png', style: { position: 'absolute', left: x, top: y, width: w * 2, height: h * 2, zIndex: z != null ? z : Math.round(y + h * 2), imageRendering: 'pixelated', pointerEvents: 'none' } }); };
 const CLUS = [[439, 197, 1, 'A'], [670, 197, 1, 'A'], [965, 197, 2, 'A'], [387, 439, 2, 'B'], [669, 439, 2, 'B'], [387, 614, 2, 'C'], [669, 614, 2, 'C']];
@@ -19,7 +19,30 @@ for (let i = 0; i < 16; i++) add('chair_b', 372 + i * 60, 88, 130);
 add('mtable_long', 1103, 389, 720);
 for (let i = 0; i < 6; i++) { add('mchair_l', 1067, 412 + i * 50, 700); add('mchair_r', 1187, 412 + i * 50, 700); }
 add('pillar_table', 305, 302); add('pillar_table', 866, 305); add('front_desk', 64, 413, 700); add('wall_tv', 84, 150, 5); add('wall_tv', 216, 150, 5);
+// 미니 탕비실: 정수기, 화분, 원형 테이블, 스툴 (reference build와 동일한 배치)
+add('water_cooler', 1232, 128); add('plant_small', 1284, 126); add('table_round', 1250, 236); add('stool', 1228, 262);
 const pct = (x, y, w, h) => ({ position: 'absolute', left: x / 14 + '%', top: y / 8 + '%', width: w / 14 + '%', height: h / 8 + '%' });
+
+// Pre-created company spaces. They are part of the office layout, like the
+// reference build, so the map can open the same space card without any setup
+// step: a company simply has these rooms from the start.
+const TYPE = { work: ['업무석', 'work'], meeting: ['회의실', 'meeting'], focus: ['포커스룸', 'focus'], lounge: ['라운지', 'heart'], pantry: ['탕비실', 'coffee'] };
+const RM = (id, floor, name, type, x, y, w, h, cap, traits, sp, extra) => ({ id, floor, name, type, x, y, w, h, cap, traits, sp, cols: 3, dx: 48, dy: 64, ...extra });
+const ROOMS = [
+  RM('3-pantry', 3, '미니 탕비실', 'pantry', 1215, 112, 105, 215, 3, ['정수기', '간식'], [1226, 176], { cols: 2, dx: 44, dy: 72 }),
+  RM('3-meet', 3, '회의 공간', 'meeting', 1040, 370, 280, 365, 12, ['예약 필요', '화상회의', 'TV'], [1052, 392], { cols: 2, dx: 136, dy: 50 })
+];
+const ROOM = {}; ROOMS.forEach(r => { ROOM[r.id] = r; });
+const TINT = { focus: 'rgba(214,190,150,.28)', meeting: 'rgba(240,192,74,.14)', lounge: 'rgba(143,207,154,.2)', pantry: 'rgba(169,216,239,.28)', work: 'transparent' };
+const FLOOR_LABEL = { 3: { label: '3F 디자인 본부', short: '3F' } };
+const inR = (r, x, y) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h;
+const SEAT_ROOM = {}; SEATS.forEach(se => { const r = ROOMS.find(rr => rr.floor === 3 && inR(rr, se.x + 18, se.y + 40)); SEAT_ROOM[se.id] = r ? r.id : null; });
+const ROOM_REASON = { '3-meet': 'meeting', '3-pantry': 'meal' };
+const ROOM_REASON_LABEL = { '3-meet': '미팅', '3-pantry': '점심' };
+const UPD = [3, 7, 1, 12, 5, 2, 9, 4, 6, 15, 8];
+const di = s => Math.max(1, Math.min(5, Math.round(1 + Math.abs(s.temp - 3) + Math.abs(s.humid - 3) * 0.5 + (s.temp >= 4 && s.humid >= 4 ? 1 : 0))));
+const sv = (p, k) => k === 'discomfort' ? di(p.senses) : p.senses[k];
+const hhmm = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 const MINI = [
   { style: { ...pct(344, 36, 984, 708), background: '#e4e2df' } }, { style: { ...pct(36, 188, 308, 556), background: '#e4e2df' } },
   { style: { ...pct(344, 36, 984, 64), background: '#a9d8ef' } }, { style: { ...pct(1328, 36, 32, 736), background: '#a9d8ef' } },
@@ -29,7 +52,16 @@ const MINI = [
 const SEN = [
   { k: 'noise', label: '소음', icon: 'noise', color: '#e5534b', lo: '조용함', hi: '시끄러움' }, { k: 'temp', label: '온도', icon: 'temp', color: '#f08a3c', lo: '추움', hi: '더움' },
   { k: 'humid', label: '습도', icon: 'humid', color: '#4a8fe0', lo: '건조', hi: '습함' }, { k: 'smell', label: '냄새', icon: 'smell', color: '#e0a020', lo: '약함', hi: '강함' },
-  { k: 'discomfort', label: '불쾌 지수', icon: 'discomfort', color: '#8f7ad8', lo: '쾌적', hi: '불쾌' }, { k: 'crowd', label: '혼잡도', icon: 'crowd', color: '#4a4e72', lo: '여유', hi: '붐빔' }
+  { k: 'lighting', label: '조명 지수', icon: 'sun', color: '#c9a44c', lo: '어두움', hi: '밝음' }, { k: 'crowd', label: '혼잡도', icon: 'crowd', color: '#4a4e72', lo: '여유', hi: '붐빔' }
+];
+// The space card averages the same six readings the reference card shows.
+const R_SEN = [
+  { k: 'temp', label: '온도', icon: 'temp', color: '#f08a3c', lv: ['매우 추움', '추움', '적당', '더움', '매우 더움'] },
+  { k: 'humid', label: '습도', icon: 'humid', color: '#4a8fe0', lv: ['매우 건조', '건조', '적당', '습함', '매우 습함'] },
+  { k: 'noise', label: '소음', icon: 'noise', color: '#e5534b', lv: ['매우 조용', '조용', '보통', '시끄러움', '매우 시끄러움'] },
+  { k: 'smell', label: '냄새', icon: 'smell', color: '#e0a020', lv: ['없음', '약함', '보통', '강함', '매우 강함'] },
+  { k: 'crowd', label: '혼잡도', icon: 'crowd', color: '#4a4e72', lv: ['한산', '여유', '보통', '혼잡', '매우 혼잡'] },
+  { k: 'discomfort', label: '불쾌 지수', icon: 'discomfort', color: '#5f6a9e', lv: ['쾌적', '보통', '약간 불쾌', '불쾌', '매우 불쾌'], auto: true }
 ];
 const SENSI = [{ k: 'visual', label: '시각 민감도', icon: 'eye', color: '#4a8fe0' }, { k: 'audio', label: '청각 민감도', icon: 'ear', color: '#e5534b' }, { k: 'smell', label: '후각 민감도', icon: 'nose', color: '#5fb34f' }];
 const SENSI_TXT = ['', '낮음', '조금 낮음', '보통', '높음', '매우 높음'];
@@ -40,7 +72,7 @@ const QUICK = [
 const WORK = [['focus', '집중 근무 중'], ['meeting', '회의 중'], ['heart', '디자인 작업 중'], ['eye', '리뷰 중'], ['phone', '통화 중'], ['help', '교육 중']];
 const REASONS = { meal: { label: '식사', icon: 'lunch', long: '식사하러 갔어요' }, meeting: { label: '회의', icon: 'meeting', long: '회의에 들어갔어요' }, outside: { label: '외근', icon: 'outside', long: '외근 중이에요' }, short: { label: '잠깐 자리 비움', icon: 'away', long: '잠깐 자리를 비웠어요' }, personal: { label: '개인 용무', icon: 'rest', long: '개인 용무 중이에요' }, home: { label: '재택', icon: 'off', long: '오늘은 재택이에요' } };
 const LV = ['', '#5aa9e0', '#7cc5a0', '#f0c04a', '#f08a3c', '#e5534b'];
-const sn = (noise, temp, humid, smell, discomfort, crowd) => ({ noise, temp, humid, smell, discomfort, crowd });
+const sn = (noise, temp, humid, smell, lighting, crowd) => ({ noise, temp, humid, smell, lighting, crowd });
 const P = (id, name, role, seat, team, status, extra, cfg, senses, sensi, desc) => ({ id, name, role, seat, team, status, reason: null, since: '09:10', task: '', msg: '', msgIcon: null, alert: false, ...extra, cfg, senses, sensi: sensi || { visual: 3, audio: 3, smell: 3 }, desc: desc || '' });
 const P0 = [
   P('me', '김민지', '프로덕트 디자이너', 'B-2', 'd', 'work', { task: '집중 근무 중', msg: '커피 마실 사람~', msgIcon: 'coffee', since: '09:12' }, { hair: 'bob', hairColor: '#5a3a2a', outfit: 'shirt', top: '#4a86d8' }, sn(2, 3, 2, 1, 2, 3), { visual: 3, audio: 4, smell: 3 }, '큰 소음이 지속되면 집중하기 어려워요. 강한 향수 냄새도 불편할 수 있어요.'),
@@ -69,12 +101,12 @@ const statusOf = p => {
 };
 const dotSq = (on, color, size) => ({ width: size, height: size, borderRadius: Math.round(size / 3.5), border: 'none', padding: 0, cursor: 'pointer', background: on ? color : '#ebe3d3', boxShadow: on ? 'inset 0 -2px 0 rgba(0,0,0,.2)' : 'inset 0 -2px 0 #dcd1bd' });
 const SEG = on => ({ height: 32, border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 800, padding: '0 12px', whiteSpace: 'nowrap', background: on ? '#fff' : 'transparent', color: on ? '#2b2d55' : '#9a9384', boxShadow: on ? '0 2px 0 #dccdb2' : 'none' });
-const VSEG = on => ({ height: 30, padding: '0 14px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap', background: on ? '#2b2d55' : 'transparent', color: on ? '#fff' : '#5d5870', boxShadow: on ? 'inset 0 -2px 0 #17183a' : 'none' });
-const OPT = on => ({ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 4px', borderRadius: 13, cursor: 'pointer', background: on ? '#ece8fb' : '#fff', border: on ? '2px solid #8b7fe0' : '2px solid #efe6d5', boxShadow: on ? '0 0 0 3px rgba(139,127,224,.18), inset 0 -3px 0 #d6cff3' : 'inset 0 -3px 0 #f1eadc' });
-const CHIP = on => ({ display: 'flex', alignItems: 'center', gap: 6, height: 34, padding: '0 10px', borderRadius: 10, cursor: 'pointer', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', border: on ? '1.5px solid #8b7fe0' : '1.5px solid #e2d6c2', background: on ? '#ece8fb' : '#fff', color: on ? '#4b3fb8' : '#4a4560', boxShadow: on ? 'inset 0 -2px 0 #d6cff3' : 'inset 0 -2px 0 #efe6d5' });
+const VSEG = on => ({ height: 30, padding: '0 14px', border: 'none', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap', background: on ? '#5d6594' : 'transparent', color: on ? '#fff' : '#5d5870', boxShadow: on ? 'inset 0 -2px 0 #414a72' : 'none' });
+const OPT = on => ({ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px 4px', borderRadius: 13, cursor: 'pointer', background: on ? '#dbddea' : '#fff', border: on ? '2px solid #5d6594' : '2px solid #efe6d5', boxShadow: on ? '0 0 0 3px rgba(219,221,234,.18), inset 0 -3px 0 #c5c9dc' : 'inset 0 -3px 0 #f1eadc' });
+const CHIP = on => ({ display: 'flex', alignItems: 'center', gap: 6, height: 34, padding: '0 10px', borderRadius: 10, cursor: 'pointer', fontSize: 12.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', border: on ? '1.5px solid #5d6594' : '1.5px solid #e2d6c2', background: on ? '#dbddea' : '#fff', color: on ? '#2f3563' : '#4a4560', boxShadow: on ? 'inset 0 -2px 0 #c5c9dc' : 'inset 0 -2px 0 #efe6d5' });
 const dotStyle = c => ({ width: 8, height: 8, borderRadius: 2, background: c, flexShrink: 0 });
 const chipStyle = st => ({ display: 'inline-flex', alignItems: 'center', gap: 7, alignSelf: 'flex-start', padding: '6px 11px', borderRadius: 9, background: st.bg, color: st.color, fontSize: 13, fontWeight: 800 });
-const checkBox = on => ({ width: 22, height: 22, borderRadius: 7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#2b2d55' : '#fff', border: on ? 'none' : '1.5px solid #cfc2aa', boxShadow: on ? 'inset 0 -2px 0 #17183a' : 'inset 0 2px 0 #f1eadc' });
+const checkBox = on => ({ width: 22, height: 22, borderRadius: 7, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#5d6594' : '#fff', border: on ? 'none' : '1.5px solid #cfc2aa', boxShadow: on ? 'inset 0 -2px 0 #414a72' : 'inset 0 2px 0 #f1eadc' });
 const pick = a => a[Math.floor(Math.random() * a.length)];
 const OUTF = {
   f: [{ outfit: 'shirt', top: '#4a86d8', bottom: 'skirt', pants: '#4a4e72' }, { outfit: 'cardigan', top: '#f0a6c8', bottom: 'skirt', pants: '#8a7a62' }, { outfit: 'hoodie', top: '#8fcf9a', bottom: 'pants', pants: '#4a4e72' }, { outfit: 'suit', top: '#3f4258', bottom: 'skirt', pants: '#2e2a36' }, { outfit: 'cardigan', top: '#e0bf8f', bottom: 'pants', pants: '#6b84b8' }, { outfit: 'hoodie', top: '#a58be0', bottom: 'skirt', pants: '#2e2a36' }],
@@ -110,7 +142,8 @@ class Component extends DCLogic {
   }
   state = { ready: !!(window.SP && window.SP.ready), screen: SESSION.current ? (SESSION.current.complete?'space':'welcome') : 'auth', authMode:location.pathname==='/signup'?'signup':'login', authError:'', authBusy:false, awayOpen:false, awayDraft:'', people: initialPeople(), modal: null, cardId: null, ed: null, menu: false, listScope: 'team', q: '', mini: null,
     vw: 900, vh: 520, view: 'all', zm: 1, panX: 0, panY: 0, full: false, pop: null, selecting: false, selRect: null, team: { x: 360, y: 330, w: 560, h: 420 },
-    pickSeat: false, seatDraft: null, toast: null, job: SESSION.current?.role||'프로덕트 디자이너', rank: '팀원',
+    spaceId: null, zoomRoom: null, upd: {},
+    pickSeat: false, seatMode: 'move', seatDraft: null, toast: null, job: SESSION.current?.role||'프로덕트 디자이너', rank: '팀원',
     notif: { master: true, items: { sense: true, meetup: true, help: true, attend: false, back: false, space: false }, scope: 'team', quiet: true }, perm: typeof Notification !== 'undefined' ? Notification.permission : 'unsupported' };
   mapRef = React.createRef();
   componentDidMount() {
@@ -140,7 +173,12 @@ class Component extends DCLogic {
   emit(type,payload={}){if(this.props&&typeof this.props.onHost==='function')this.props.onHost(type,payload);}
   applySnapshot(me,users,floor){if(!me)return;SESSION.current=me;SESSION.users=users||[];SESSION.floor=floor;this.setState({people:SESSION.referencePeople(SESSION.users,SESSION.current),screen:'space'});}
   focusPerson(id){const p=this.state.people.find(p=>p.sourceId===id||p.id===id);if(!p)return;this.setState({pop:p.id});}
-  startPickSeat(){this.setState({pickSeat:true,seatDraft:null,pop:null});}
+  startPickSeat(mode='move'){this.setState({pickSeat:true,seatMode:mode,seatDraft:null,pop:null,spaceId:null,zoomRoom:null,view:'all',zm:1,panX:0,panY:0});}
+  openRoom(id){const rm=ROOM[id];if(!rm)return;this.setState({spaceId:id,zoomRoom:id,view:'room',zm:1,panX:0,panY:0,pop:null});}
+  closeRoom(){this.setState({spaceId:null,zoomRoom:null,view:'all',zm:1,panX:0,panY:0});}
+  startMoveSeat(){this.setState({pickSeat:true,seatMode:'move',seatDraft:null,pop:null,spaceId:null,zoomRoom:null,view:'all',zm:1,panX:0,panY:0,selecting:false});}
+  async goSpace(id){const reason=ROOM_REASON_LABEL[id];if(!reason)return this.showToast('이 공간은 지금 이동할 수 없어요.');try{await SESSION.api.status('away',reason);this.emit('saved',{kind:'space',id});this.showToast(ROOM[id].name+'(으)로 이동했어요');}catch(error){this.showToast(error.message);}}
+  async returnSeat(){try{await SESSION.api.status('working');this.emit('saved',{kind:'space'});this.showToast('내 자리로 복귀했어요');}catch(error){this.showToast(error.message);}}
   async saveAppearance(cfg){try{await SESSION.api.referenceCharacter(cfg);this.emit('saved',{kind:'character'});}catch(error){this.showToast(error.message);}}
   attach() {
     const el = this.mapRef.current;
@@ -159,7 +197,7 @@ class Component extends DCLogic {
     try{
       const signup=this.state.authMode==='signup'&&!demo;
       if(signup&&values.password!==values.confirm)throw new Error('비밀번호가 일치하지 않아요.');
-      SESSION.current=demo?await SESSION.api.demo():signup?await SESSION.api.signup(values):await SESSION.api.login(values.email);
+      SESSION.current=demo?await SESSION.api.demo():signup?await SESSION.api.signup(values):await SESSION.api.login(values.email,values.password,values.code);
       this.setState({people:initialPeople(),screen:signup||!SESSION.current.complete?'welcome':'space',authBusy:false});history.replaceState({},'', '/office');
     }catch(error){this.setState({authError:error.message,authBusy:false});}
   }
@@ -189,26 +227,35 @@ class Component extends DCLogic {
 
     // camera
     const vw = s.vw, vh = s.vh;
-    const view = s.selecting || s.pickSeat ? 'all' : s.view;
-    const base = view === 'team' ? s.team : { x: 0, y: 0, w: MW, h: MH };
-    const z0 = Math.min(vw / base.w, vh / base.h) * (view === 'team' ? 0.92 : 0.98);
+    const floor = SESSION.floor || 3;
+    let view = s.selecting || s.pickSeat ? 'all' : s.view;
+    const zr = view === 'room' ? ROOM[s.zoomRoom] : null;
+    if (view === 'team' && floor !== 3) view = 'all';
+    if (view === 'room' && (!zr || zr.floor !== floor)) view = 'all';
+    const base = view === 'team' ? s.team : view === 'room' ? { x: zr.x - 30, y: zr.y - 40, w: zr.w + 60, h: zr.h + 70 } : { x: 0, y: 0, w: MW, h: MH };
+    const z0 = Math.min(2.4, Math.min(vw / base.w, vh / base.h) * (view === 'all' ? 0.98 : 0.92));
     const z = z0 * (s.selecting ? 1 : s.zm);
     const cx = base.x + base.w / 2 + (s.selecting ? 0 : s.panX), cy = base.y + base.h / 2 + (s.selecting ? 0 : s.panY);
     const tx = vw / 2 - cx * z, ty = vh / 2 - cy * z;
-    const showText = s.zm >= 1.45;
+    const showText = view === 'team' || s.zm >= 1.45;
     const k = 1 / z;
     const toMap = e => { const r = this.mapRef.current.getBoundingClientRect(); return { x: Math.max(0,Math.min(MW,(e.clientX - r.left - tx) / z)), y: Math.max(0,Math.min(MH,(e.clientY - r.top - ty) / z)) }; };
 
     // people placement
     const seatMap = {}; SEATS.forEach(se => { seatMap[se.id] = se; });
-    const placed = s.people.filter(p=>!EMBEDDED||p.floor===SESSION.floor).map(p => { const se = seatMap[p.id === 'me' && s.pickSeat ? (s.seatDraft || p.seat) : p.seat]; return { p, se, present: p.status === 'work' || (p.id === 'me' && s.pickSeat) }; });
+    const placed = s.people.filter(p=>!EMBEDDED||p.floor===SESSION.floor).map(p => { const se = seatMap[p.id === 'me' && s.pickSeat ? (s.seatDraft || p.seat) : p.seat]; return { p, se, present: p.status === 'work' || (p.id === 'me' && s.pickSeat) }; }).filter(o => o.se);
     const focus = (p, se) => { const zm = Math.max(s.zm, 1.3 / z0); set({ pop: p.id, view: s.view === 'team' && !(se.x > s.team.x && se.x < s.team.x + s.team.w && se.y > s.team.y && se.y < s.team.y + s.team.h) ? 'all' : s.view, zm, panX: se.x + 18 - (base.x + base.w / 2), panY: se.y - 10 - (base.y + base.h / 2) }); };
     const glow = c => `drop-shadow(2px 0 0 ${c}) drop-shadow(-2px 0 0 ${c}) drop-shadow(0 2px 0 ${c}) drop-shadow(0 -2px 0 ${c})`;
-    const mapPeople = placed.map(o => ({ name: o.p.name, img: C(o.p.cfg, { back: o.se.side === 's' }), onClick: () => !s.pickSeat && set({ pop: s.pop === o.p.id ? null : o.p.id }),
-      style: { position: 'absolute', left: o.se.x, top: o.se.y, width: 36, height: 56, zIndex: o.se.z, cursor: 'pointer', opacity: o.present ? 1 : 0.42, filter: o.p.id === 'me' ? glow('#8b7fe0') : s.pop === o.p.id ? glow('#f0c04a') : o.present ? 'none' : 'grayscale(.4)', transition: 'transform .15s' } }));
+    const mapPeople = placed.map(o => {
+      // Away and off-work need to read differently: away is only dimmed,
+      // off-work fades out and turns grayscale.
+      const awayOff = o.present ? null : o.p.status === 'away' ? { opacity: 0.68, filter: 'grayscale(.15)' } : { opacity: 0.28, filter: 'grayscale(1)' };
+      return { name: o.p.name, img: C(o.p.cfg, { back: o.se.side === 's' }), onClick: () => !s.pickSeat && set({ pop: s.pop === o.p.id ? null : o.p.id }),
+        style: { position: 'absolute', left: o.se.x, top: o.se.y, width: 36, height: 56, zIndex: o.se.z, cursor: 'pointer', opacity: awayOff ? awayOff.opacity : 1, filter: o.p.id === 'me' ? glow('#5d6594') : s.pop === o.p.id ? glow('#f0c04a') : awayOff ? awayOff.filter : 'none', transition: 'transform .15s' } };
+    });
     const bubbles = s.pickSeat ? [] : placed.filter(o => (o.present && o.p.msg)||o.p.status==='away').map(o => {
       const away=o.p.status==='away',reason=REASONS[o.p.reason||'short'];const bubbleText=away?(o.p.awayNote||(o.p.reason?reason.label:'')):o.p.msg;const al = !away&&o.p.alert, isMe = o.p.id === 'me';
-      const bg = al ? '#fff0f1' : '#fffdf8', bd = al ? '#f1b3ba' : isMe ? '#8b7fe0' : '#ded1bb', fg = al ? '#cf3646' : '#2e2a44';
+      const bg = al ? '#fff0f1' : '#fffdf8', bd = al ? '#f1b3ba' : isMe ? '#5d6594' : '#ded1bb', fg = al ? '#cf3646' : '#2e2a44';
       const lift = showText && Math.round((o.se.x - 10) / 56) % 2 ? 22 : 0;
       const bx = Math.max(84, Math.min(MW - 84, o.se.x + 18));
       return { icon:IC(away?reason.icon:(o.p.msgIcon||'heart')),text:bubbleText, showText, onClick: e => { if (e && e.stopPropagation) e.stopPropagation(); if (!s.pickSeat) set({ pop: s.pop === o.p.id ? null : o.p.id }); },
@@ -228,27 +275,73 @@ class Component extends DCLogic {
         statusSub: p.status === 'work' ? p.since + ' 출근' : p.status === 'off' ? '내일 만나요' : p.since + '부터 자리 비움' + (p.task ? ' · ' + p.task : ''),
         statusStyle: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 11, background: st.bg, color: st.color },
         hasMsg: !!p.msg && p.status === 'work', msg: p.msg, msgIcon: IC(p.msgIcon || 'heart'),
-        avStyle: { width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: '#ece8fb', display: 'block', flexShrink: 0 },
-        openCard: () => EMBEDDED?this.emit('card',{id:p.sourceId}):set({ modal: 'card', cardId: p.id, pop: null }),
+        avStyle: { width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: '#dbddea', display: 'block', flexShrink: 0 },
+        openCard: () => { set({ pop: null }); if (EMBEDDED) this.emit('card',{id:p.sourceId}); else set({ modal: 'card', cardId: p.id }); },
         style: { position: 'fixed', left: Math.max(132, Math.min(vw - 132, psx)), top: flip ? psy + 56 : psy, transform: flip ? 'translate(-50%,0)' : 'translate(-50%,-100%)', zIndex: 5000, width: 250, display: 'flex', flexDirection: 'column', gap: 9, padding: 12, boxSizing: 'border-box', background: '#fbf7ef', border: '2px solid #2e2433', borderRadius: 14, boxShadow: '0 5px 0 rgba(46,36,51,.25)', cursor: 'default' },
         tailStyle: flip
           ? { position: 'absolute', left: '50%', top: -8, width: 12, height: 12, marginLeft: -7, background: '#fbf7ef', borderLeft: '2px solid #2e2433', borderTop: '2px solid #2e2433', transform: 'rotate(45deg)' }
           : { position: 'absolute', left: '50%', bottom: -8, width: 12, height: 12, marginLeft: -7, background: '#fbf7ef', borderRight: '2px solid #2e2433', borderBottom: '2px solid #2e2433', transform: 'rotate(45deg)' } };
     }
-    const tm = s.team, M = 'rgba(38,40,72,.8)';
-    const teamMask = view === 'team' ? [
+    const tm = view === 'room' ? { x: zr.x, y: zr.y, w: zr.w, h: zr.h } : s.team, M = 'rgba(38,40,72,.8)';
+    const teamMask = view === 'team' || view === 'room' ? [
       { style: { position: 'absolute', left: -3000, top: -3000, width: 7400, height: 3000 + tm.y, background: M, zIndex: 4000, pointerEvents: 'none' } },
       { style: { position: 'absolute', left: -3000, top: tm.y + tm.h, width: 7400, height: 3000, background: M, zIndex: 4000, pointerEvents: 'none' } },
       { style: { position: 'absolute', left: -3000, top: tm.y, width: 3000 + tm.x, height: tm.h, background: M, zIndex: 4000, pointerEvents: 'none' } },
       { style: { position: 'absolute', left: tm.x + tm.w, top: tm.y, width: 3000, height: tm.h, background: M, zIndex: 4000, pointerEvents: 'none' } }
     ] : [];
-    const sr = s.selecting ? s.selRect : (view === 'team' ? tm : null);
-    const selRectStyle = sr ? { position: 'absolute', left: sr.x, top: sr.y, width: sr.w, height: sr.h, border: `${2 * k}px dashed #b3a9ee`, borderRadius: 10 * k, background: s.selecting ? 'rgba(139,127,224,.16)' : 'transparent', zIndex: 4001, pointerEvents: 'none', boxSizing: 'border-box' } : {};
-    const selLabelStyle = { position: 'absolute', left: 0, top: 0, transform: `translateY(-110%) scale(${k})`, transformOrigin: '0 100%', padding: '4px 9px', borderRadius: 6, background: '#8b7fe0', color: '#fff', font: '12px Galmuri11', whiteSpace: 'nowrap' };
+    const sr = s.selecting ? s.selRect : (view === 'team' || view === 'room' ? tm : null);
+    const selRectStyle = sr ? { position: 'absolute', left: sr.x, top: sr.y, width: sr.w, height: sr.h, border: `${2 * k}px dashed #5d6594`, borderRadius: 10 * k, background: s.selecting ? 'rgba(219,221,234,.16)' : 'transparent', zIndex: 4001, pointerEvents: 'none', boxSizing: 'border-box' } : {};
+    const selLabelStyle = { position: 'absolute', left: 0, top: 0, transform: `translateY(-110%) scale(${k})`, transformOrigin: '0 100%', padding: '4px 9px', borderRadius: 6, background: '#5d6594', color: '#fff', font: '12px Galmuri11', whiteSpace: 'nowrap' };
     const taken = new Set(s.people.filter(p => p.id !== 'me'&&(!EMBEDDED||p.floor===SESSION.floor)).map(p => p.seat));
-    const draft = s.seatDraft || me.seat;
-    const seatMarkers = SEATS.filter(se => !taken.has(se.id)).map(se => { const on = se.id === draft;
-      return { id: se.id, onClick: () => set({ seatDraft: se.id }), style: { position: 'absolute', left: se.mx - 6, top: se.my, width: 40, height: 60, border: on ? '2px solid #8b7fe0' : '2px dashed #b3a9ee', background: on ? 'rgba(139,127,224,.35)' : 'rgba(255,255,255,.55)', borderRadius: 9, zIndex: 1800, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 3, boxSizing: 'border-box', font: '10.5px Galmuri11', color: on ? '#fff' : '#5b4fc9', cursor: 'pointer' } }; });
+    const draft = s.seatDraft || me.seat || null;
+    const seatMarkers = SEATS.filter(se => !taken.has(se.id) && (!SESSION.seatMap || SESSION.seatMap[se.id])).map(se => { const on = se.id === draft;
+      return { id: se.id, onClick: () => set({ seatDraft: se.id }), style: { position: 'absolute', left: se.mx - 6, top: se.my, width: 40, height: 60, border: on ? '2px solid #5d6594' : '2px dashed #5d6594', background: on ? 'rgba(219,221,234,.35)' : 'rgba(255,255,255,.55)', borderRadius: 9, zIndex: 1800, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 3, boxSizing: 'border-box', font: '10.5px Galmuri11', color: on ? '#fff' : '#2f3563', cursor: 'pointer' } }; });
+
+    // spaces: pre-created rooms, their tags, and the space card
+    const myLoc = me.status === 'away' ? (ROOM_REASON['3-meet'] === me.reason ? '3-meet' : ROOM_REASON['3-pantry'] === me.reason ? '3-pantry' : null) : null;
+    const occOf = rm => s.people.filter(p => {
+      if (p.status === 'off') return false;
+      if (rm.type === 'work') return p.status === 'work' && rm.floor === 3 && SEAT_ROOM[p.seat] === rm.id;
+      return p.status === 'away' && ROOM_REASON[rm.id] === p.reason;
+    });
+    const roomAgg = rm => { const occ = occOf(rm); return { occ, avg: kk => occ.length ? occ.reduce((a, p) => a + sv(p, kk), 0) / occ.length : null }; };
+    const floorRooms = ROOMS.filter(r => r.floor === floor);
+    const heatCol = rm => { if (!s.mini) return null; const a = roomAgg(rm).avg(s.mini); return a == null ? null : LV[Math.round(a)]; };
+    const miniRooms = floorRooms.map(rm => { const col = heatCol(rm), selR = s.spaceId === rm.id;
+      return { style: { ...pct(rm.x, rm.y, rm.w, rm.h), boxSizing: 'border-box', zIndex: 1, borderRadius: 2, background: s.mini ? (col ? col + 'cc' : 'repeating-linear-gradient(45deg,rgba(141,138,160,.45) 0 3px,transparent 3px 6px)') : rm.walled ? '#d3cec6' : 'transparent', border: selR ? '2px solid #f0c04a' : rm.walled ? '1.5px solid #6e7190' : s.mini ? '1px solid rgba(255,255,255,.5)' : 'none' } }; });
+    const busy = s.pickSeat || s.selecting;
+    const roomWalls = [];
+    floorRooms.filter(r => r.walled).forEach(r => { roomWalls.push({ style: { position: 'absolute', left: r.x, top: r.y, width: r.w, height: r.h, boxSizing: 'border-box', border: '3px solid #2e2433', borderRadius: 3, background: TINT[r.type], boxShadow: 'inset 0 18px 0 #f6f0e4, inset 0 21px 0 #d9ceb8', zIndex: 2, pointerEvents: 'none' } }); roomWalls.push({ style: { position: 'absolute', left: r.x + r.w / 2 - 26, top: r.y + r.h - 4, width: 52, height: 5, background: '#e4e2df', zIndex: 3, pointerEvents: 'none' } }); });
+    const roomFills = floorRooms.map(rm => { const col = heatCol(rm), selR = s.spaceId === rm.id; if (!s.mini && !selR) return null;
+      return { style: { position: 'absolute', left: rm.x, top: rm.y, width: rm.w, height: rm.h, boxSizing: 'border-box', borderRadius: 6, zIndex: 4, pointerEvents: 'none', background: s.mini ? (col ? col + '5c' : 'repeating-linear-gradient(45deg,rgba(110,113,144,.22) 0 8px,transparent 8px 16px)') : 'rgba(93,101,148,.08)', border: selR ? (3 * k) + 'px solid #f0c04a' : (1.5 * k) + 'px dashed rgba(46,36,51,.35)' } }; }).filter(Boolean);
+    const roomTags = busy ? [] : floorRooms.map(rm => { const selR = s.spaceId === rm.id;
+      return { name: rm.name, icon: IC(TYPE[rm.type][1]), cnt: occOf(rm).length + '/' + rm.cap, onClick: () => this.openRoom(rm.id),
+        cntStyle: { font: '11px Galmuri11', color: selR ? '#dbddea' : '#8a8499' },
+        style: { position: 'absolute', left: rm.x + 6, top: rm.y + (rm.walled ? 24 : 6), transform: 'scale(' + Math.min(k, 1.6) + ')', transformOrigin: '0 0', zIndex: 1900, display: 'flex', alignItems: 'center', gap: 5, padding: '4px 8px', borderRadius: 7, border: '1.5px solid ' + (selR ? '#2b2d55' : '#cfc2aa'), background: selR ? '#2b2d55' : 'rgba(251,247,239,.94)', color: selR ? '#fff' : '#2e2a44', fontSize: 12, fontWeight: 800, whiteSpace: 'nowrap', cursor: 'pointer', boxShadow: '0 2px 0 rgba(46,36,51,.18)' } }; });
+    let rc = {}; const rcm = s.spaceId ? ROOM[s.spaceId] : null;
+    if (rcm) {
+      const ag = roomAgg(rcm), occ = ag.occ, nR = occ.length, ty = TYPE[rcm.type], full = nR >= rcm.cap;
+      const ri = ROOMS.indexOf(rcm), mins = UPD[ri % UPD.length], at = new Date(Date.now() - mins * 60000);
+      let mvLabel = '이 공간으로 이동하기', mvOn = true, mv = null;
+      if (myLoc === rcm.id) { mvLabel = '내 자리로 복귀하기'; mv = () => this.returnSeat(); }
+      else if (rcm.type === 'work') {
+        if (SEAT_ROOM[me.seat] === rcm.id) { mvOn = false; mvLabel = '지금 내 자리가 있는 공간이에요'; }
+        else { mvLabel = '이 공간의 자리로 변경하기'; mv = () => this.startMoveSeat(); }
+      } else if (full) { mvLabel = '지금은 수용 인원이 꽉 찼어요'; mvOn = false; }
+      else if (ROOM_REASON[rcm.id]) { mv = () => this.goSpace(rcm.id); }
+      else { mvOn = false; mvLabel = '이 공간은 이동할 수 없어요'; }
+      const ratio = Math.min(1, nR / rcm.cap);
+      const company = SESSION.companyName || '센스컴퍼니';
+      const fl = FLOOR_LABEL[rcm.floor] || { label: rcm.floor + 'F', short: rcm.floor + 'F' };
+      rc = { path: company + ' › ' + fl.label, name: rcm.name, typeLabel: ty[0], typeIcon: IC(ty[1]), traits: rcm.traits, occ: String(nR), cap: String(rcm.cap),
+        capFill: { position: 'absolute', left: 0, top: 0, bottom: 0, width: ratio * 100 + '%', borderRadius: 3, background: ratio >= 0.9 ? '#e5534b' : ratio >= 0.6 ? '#f0a93b' : '#3fae6a' },
+        faces: occ.slice(0, 9).map(p => ({ img: C(p.cfg), name: p.name, onClick: () => this.focusPerson(p.sourceId || p.id) })), more: '+' + (nR - 9), hasMore: nR > 9, nobody: nR === 0,
+        resp: String(nR), updated: nR ? hhmm(at) + ' (' + mins + '분 전)' : '최근 1시간 응답 없음',
+        senses: R_SEN.map(se => { const a = ag.avg(se.k), lv = a == null ? 0 : Math.round(a); return { label: se.label, icon: IC(se.icon), val: a == null ? '—' : a.toFixed(1) + ' ' + se.lv[lv - 1], valStyle: { flex: 1, minWidth: 0, textAlign: 'right', fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: lv >= 4 ? se.color : '#8a8499' },
+          blocks: [1, 2, 3, 4, 5].map(nv => ({ style: { width: 13, height: 12, borderRadius: 3, background: nv <= lv ? se.color : '#ebe3d3', boxShadow: nv <= lv ? 'inset 0 -2px 0 rgba(0,0,0,.18)' : 'inset 0 -2px 0 #dcd1bd' } })) }; }),
+        info: [['층', fl.label], ['공간 유형', ty[0]], ['수용 인원', rcm.cap + '명'], ['미니맵 영역', '(' + rcm.x + ', ' + rcm.y + ') · ' + rcm.w + '×' + rcm.h]].map(([a, b]) => ({ k: a, v: b })),
+        mvLabel, mv: () => { if (mvOn && mv) mv(); }, mvStyle: { height: 44, flexShrink: 0, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: mvOn ? 'pointer' : 'default', background: mvOn ? '#2b2d55' : '#e7e0d2', color: mvOn ? '#fff' : '#9a9384', boxShadow: mvOn ? 'inset 0 -3px 0 #17183a' : 'none' } };
+    }
 
     // list
     const scopeTeam = s.listScope === 'team';
@@ -263,7 +356,7 @@ class Component extends DCLogic {
         return { name: p.name, isMe: p.id === 'me', img: C(p.cfg), line, icon: IC(icon), status: st.label, dot: dotStyle(st.dot),
           statusStyle: { display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: st.color, whiteSpace: 'nowrap' },
           lineStyle: { display: 'flex', alignItems: 'center', gap: 5, fontSize: 12.5, fontWeight: hasMsg ? 700 : 500, color: hasMsg ? (p.alert ? '#cf3646' : '#2e2a44') : '#8a8499', maxWidth: '100%', minWidth: 0 },
-          avatarStyle: { width: 42, height: 42, flexShrink: 0, borderRadius: 12, overflow: 'hidden', display: 'block', background: dim ? '#ecebf1' : '#ece8fb', opacity: dim ? 0.55 : 1 },
+          avatarStyle: { width: 42, height: 42, flexShrink: 0, borderRadius: 12, overflow: 'hidden', display: 'block', background: dim ? '#ecebf1' : '#dbddea', opacity: dim ? 0.55 : 1 },
           onClick: () => focus(p, seatMap[p.seat]),
           style: { display: 'flex', alignItems: 'center', gap: 10, padding: '8px', borderRadius: 12, cursor: 'pointer', textAlign: 'left', width: '100%', background: sel ? '#f0ecfb' : 'transparent', border: sel ? '1.5px solid #cfc6f2' : '1.5px solid transparent' } }; });
 
@@ -288,13 +381,13 @@ class Component extends DCLogic {
         knob: { position: 'absolute', top: 3, left: `calc(${pctv}% - 8px)`, width: 16, height: 16, borderRadius: '50%', boxSizing: 'border-box', background: '#fff', border: '3px solid ' + se.color, boxShadow: '0 2px 0 rgba(46,36,51,.2)' } }; });
     const quickBtns = QUICK.map(q => { const on = me.msg === q.text;
       return { icon: IC(q.icon), text: q.text, onClick: () => { if (on) this.updMe({ msg: '', msgIcon: null, alert: false }); else this.updMe({ msg: q.text, msgIcon: q.icon, alert: q.alert }); },
-        style: { height: 38, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#ece8fb' : '#fff', border: on ? '2px solid #8b7fe0' : '1.5px solid #e2d6c2', boxShadow: on ? 'inset 0 -2px 0 #d6cff3' : 'inset 0 -3px 0 #efe6d5' } }; });
+        style: { height: 38, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#dbddea' : '#fff', border: on ? '2px solid #5d6594' : '1.5px solid #e2d6c2', boxShadow: on ? 'inset 0 -2px 0 #c5c9dc' : 'inset 0 -3px 0 #efe6d5' } }; });
 
     // minimap
     const MB = [['noise', '청각', 'ear'], ['smell', '후각', 'nose'], ['temp', '온도', 'temp'], ['humid', '습도', 'humid']];
     const miniBtns = MB.map(([key, label, icon]) => ({ label, icon: IC(icon), onClick: () => set({ mini: s.mini === key ? null : key }), style: { ...CHIP(s.mini === key), height: 30, justifyContent: 'center', padding: '0 4px', fontSize: 12 } }));
     const miniDots = placed.map(o => { const isMe = o.p.id === 'me', sz = isMe ? 9 : 6, st = statusOf(o.p);
-      return { isMe, style: { position: 'absolute', left: (o.se.x + 18) / 14 + '%', top: (o.se.y + 40) / 8 + '%', width: sz, height: sz, margin: `-${sz / 2 + 1.5}px 0 0 -${sz / 2 + 1.5}px`, borderRadius: '50%', background: isMe ? '#8b7fe0' : st.dot, border: '1.5px solid #fff', opacity: o.present ? 1 : 0.45, zIndex: isMe ? 3 : 2 } }; });
+      return { isMe, style: { position: 'absolute', left: (o.se.x + 18) / 14 + '%', top: (o.se.y + 40) / 8 + '%', width: sz, height: sz, margin: `-${sz / 2 + 1.5}px 0 0 -${sz / 2 + 1.5}px`, borderRadius: '50%', background: isMe ? '#5d6594' : st.dot, border: '1.5px solid #fff', opacity: o.present ? 1 : 0.45, zIndex: isMe ? 3 : 2 } }; });
     const miniHeat = s.mini ? placed.filter(o => o.present).map(o => { const col = LV[o.p.senses[s.mini]];
       return { style: { position: 'absolute', left: (o.se.x + 18) / 14 + '%', top: (o.se.y + 40) / 8 + '%', width: '22%', aspectRatio: '1', transform: 'translate(-50%,-50%)', borderRadius: '50%', background: `radial-gradient(circle, ${col}dd 0%, ${col}66 38%, ${col}00 70%)`, zIndex: 1 } }; }) : [];
     const vx = Math.max(0, -tx / z), vy = Math.max(0, -ty / z), vx2 = Math.min(MW, (vw - tx) / z), vy2 = Math.min(MH, (vh - ty) / z);
@@ -305,7 +398,7 @@ class Component extends DCLogic {
     const obIdx = s.modal === 'editor' && s.ed && s.ed.from === 'onboard' ? 2 : scn === 'info' ? 1 : 3;
     const obSteps = ['기본 정보', '캐릭터', '내 자리'].map((label, i) => { const on = i + 1 === obIdx, done = i + 1 < obIdx;
       return { n: done ? '✓' : String(i + 1), label, line: i > 0, labelStyle: { fontSize: 13, fontWeight: 800, color: on ? '#2b2d55' : '#9a9384' },
-        numStyle: { width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px Galmuri11', background: on ? '#2b2d55' : done ? '#8b7fe0' : '#e7e0d2', color: on || done ? '#fff' : '#9a9384' } }; });
+        numStyle: { width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px Galmuri11', background: on ? '#2b2d55' : done ? '#5d6594' : '#e7e0d2', color: on || done ? '#fff' : '#9a9384' } }; });
     const sel = (label, value, options, key) => ({ label, options: options.map(v => ({ v, sel: v === value })), onChange: e => { set({ [key]: e.target.value }); if (key === 'job') this.updMe({ role: e.target.value }); } });
     const infoSelects = [sel('직무', s.job, [...new Set([me.role,'프로덕트 디자이너','FE 엔지니어','BE 엔지니어','UX 리서처','그래픽 디자이너','UI 디자이너','BX 디자이너','PM'].filter(Boolean))], 'job'), sel('직책 (선택)', s.rank, ['팀원', '파트 리드', '팀장', '인턴'], 'rank')];
 
@@ -313,8 +406,8 @@ class Component extends DCLogic {
     let ed = {}; const E = s.ed;
     if (s.modal === 'editor' && E && SPx) {
       const d = E.draft;
-      const sw = (list, key, size) => list.map(c => ({ onClick: () => this.setDraft({ [key]: c, special: key === 'skin' || key === 'eye' ? d.special : null }), style: { width: size, height: size, borderRadius: '50%', cursor: 'pointer', padding: 0, background: c, border: d[key] === c ? '3px solid #fff' : '2px solid rgba(46,36,51,.12)', boxShadow: d[key] === c ? '0 0 0 2px #5b4fc9' : 'inset 0 -2px 0 rgba(0,0,0,.15)' } }));
-      const card = on => ({ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20, borderRadius: 18, cursor: 'pointer', background: on ? '#fff' : '#faf6ee', border: on ? '2px solid #8b7fe0' : '2px solid #efe6d5', boxShadow: on ? '0 0 0 4px rgba(139,127,224,.14), inset 0 -4px 0 #e4defa' : 'inset 0 -3px 0 #efe6d5', color: '#2e2a44', textAlign: 'center' });
+      const sw = (list, key, size) => list.map(c => ({ onClick: () => this.setDraft({ [key]: c, special: key === 'skin' || key === 'eye' ? d.special : null }), style: { width: size, height: size, borderRadius: '50%', cursor: 'pointer', padding: 0, background: c, border: d[key] === c ? '3px solid #fff' : '2px solid rgba(46,36,51,.12)', boxShadow: d[key] === c ? '0 0 0 2px #2f3563' : 'inset 0 -2px 0 rgba(0,0,0,.15)' } }));
+      const card = on => ({ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 20, borderRadius: 18, cursor: 'pointer', background: on ? '#fff' : '#faf6ee', border: on ? '2px solid #5d6594' : '2px solid #efe6d5', boxShadow: on ? '0 0 0 4px rgba(219,221,234,.14), inset 0 -4px 0 #e4defa' : 'inset 0 -3px 0 #efe6d5', color: '#2e2a44', textAlign: 'center' });
       const titles = { face: ['얼굴', '머리 모양과 색을 골라주세요'], outfit: ['옷 스타일', '기본 의상 또는 특별 스킨을 골라주세요'] };
       const finish = () => { if(EMBEDDED)return this.saveAppearance({...d});this.updMe({ cfg: { ...d } }); if (E.from === 'onboard') this.setState({ modal: null, ed: null, screen: 'space', pickSeat: true, seatDraft: null, pop: null }); else { this.setState({ modal: null, ed: null }); this.showToast('캐릭터를 저장했어요'); } };
       const prevMap = { face: null, outfit: 'face' };
@@ -366,7 +459,7 @@ class Component extends DCLogic {
       onName: e => this.updMe({ name: e.target.value }), infoSelects, obSteps,
       spaceStyle: { position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', background: '#f1e9dc', filter: blur ? 'blur(5px)' : 'none', pointerEvents: blur ? 'none' : 'auto' },
       counts, me, meImg: C(me.cfg), toggleMenu: () => set({ menu: !s.menu }), showMenu: s.menu,
-      menuItems: [MI('내 감각 카드', 'eye', '', () => set({ modal: 'card', cardId: 'me', menu: false })), MI('캐릭터 꾸미기', 'heart', '', () => this.openEditor('header')), MI('내 자리 변경', 'work', me.seat, () => set({ menu: false, pickSeat: true, seatDraft: null, pop: null })), MI('설정 · 알림', 'help', '', () => this.openSettings()), MI('로그아웃', 'off', '', () => this.logout())],
+      menuItems: [MI('내 감각 카드', 'eye', '', () => set({ modal: 'card', cardId: 'me', menu: false })), MI('캐릭터 꾸미기', 'heart', '', () => this.openEditor('header')), MI('내 자리 변경', 'work', me.seat, () => set({ menu: false, pickSeat: true, seatMode: 'move', seatDraft: null, pop: null })), MI('설정 · 알림', 'help', '', () => this.openSettings()), MI('로그아웃', 'off', '', () => this.logout())],
       openSettings: () => this.openSettings(), notifOn: n.master,
       mapRef: this.mapRef, stop,
       vpStyle: { flex: 1, minWidth: 0, position: 'relative', borderRadius: 18, overflow: 'hidden', backgroundColor: '#262848', backgroundImage: 'radial-gradient(#33366a 1.5px,transparent 1.5px)', backgroundSize: '24px 24px', touchAction: 'none', cursor: this._drag ? 'grabbing' : 'grab', userSelect: 'none' },
@@ -375,22 +468,25 @@ class Component extends DCLogic {
       vpMove: e => { const d = this._drag; if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true; if (d.moved) set({ panX: d.px - dx / z, panY: d.py - dy / z }); },
       vpUp: () => { const d = this._drag; this._drag = null; if (d && !d.moved) set({ pop: null }); else this.forceUpdate(); },
       vpWheel: e => { if (s.selecting) return; const f = e.deltaY < 0 ? 1.12 : 1 / 1.12; set({ zm: Math.max(0.7, Math.min(4, s.zm * f)) }); },
-      furniture: FURN.map(f => ({ ...f, src: R(f.src) })), mapPeople, bubbles, hasPop: !!po && !s.pickSeat, pop, closePop: () => set({ pop: null }),
+      furniture: FURN.map(f => ({ ...f, src: R(f.src) })), miniRooms, roomWalls, roomFills, roomTags, hasRoomCard: !!rcm, rc, closeRoom: () => this.closeRoom(),
+      inRoomView: view === 'room', roomCrumb: view === 'room' ? ((FLOOR_LABEL[floor] || { short: floor + 'F' }).short + ' › ' + zr.name) : '',
+      mapPeople, bubbles, hasPop: !!po && !s.pickSeat, pop, closePop: () => set({ pop: null }),
       teamMask, hasSelRect: !!sr && sr.w > 0, selRectStyle, selLabelStyle, teamName: '디자인팀',
-      viewAll: () => set({ view: 'all', zm: 1, panX: 0, panY: 0 }), viewTeam: () => set({ view: 'team', zm: 1, panX: 0, panY: 0 }),
+      viewAll: () => set({ view: 'all', zm: 1, panX: 0, panY: 0, spaceId: null, zoomRoom: null }), viewTeam: () => set({ view: 'team', zm: 1, panX: 0, panY: 0, spaceId: null, zoomRoom: null }),
       viewAllStyle: VSEG(view === 'all'), viewTeamStyle: VSEG(view === 'team'),
-      startSelect: () => set({ selecting: true, selRect: null, pop: null }), cancelSelect: () => set({ selecting: false, selRect: null }),
+      startSelect: () => set({ selecting: true, selRect: null, pop: null, spaceId: null, zoomRoom: null, view: 'all', zm: 1, panX: 0, panY: 0 }), cancelSelect: () => set({ selecting: false, selRect: null }),
       selDown: e => { e.stopPropagation(); this._sel = toMap(e); e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId); set({ selRect: { x: this._sel.x, y: this._sel.y, w: 0, h: 0 } }); },
       selMove: e => { if (!this._sel) return; const p = toMap(e), a = this._sel; set({ selRect: { x: Math.min(a.x, p.x), y: Math.min(a.y, p.y), w: Math.abs(p.x - a.x), h: Math.abs(p.y - a.y) } }); },
       selUp: () => { this._sel = null; },
       saveTeam: () => { const r = s.selRect; if (!r || r.w < 60 || r.h < 60) return this.showToast('조금 더 크게 드래그해 주세요'); try { localStorage.setItem(EMBEDDED?'senspace.team.'+SESSION.floor:'senspace.team', JSON.stringify(r)); } catch (e) {} set({ team: r, selecting: false, selRect: null, view: 'team', zm: 1, panX: 0, panY: 0 }); this.showToast('내 팀 영역을 저장했어요'); },
-      saveTeamStyle: { height: 36, padding: '0 14px', borderRadius: 10, border: 'none', background: s.selRect && s.selRect.w > 60 ? '#2b2d55' : '#b9b7cc', color: '#fff', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: 'inset 0 -3px 0 rgba(0,0,0,.25)' },
+      saveTeamStyle: { height: 36, padding: '0 14px', borderRadius: 10, border: '1.5px solid #5d6594', background: s.selRect && s.selRect.w > 60 ? '#dbddea' : '#c5c9dc', color: '#2f3563', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: 'inset 0 -3px 0 #c5c9dc' },
       selecting: s.selecting,
       zoomIn: () => set({ zm: Math.min(4, s.zm * 1.25) }), zoomOut: () => set({ zm: Math.max(0.7, s.zm / 1.25) }), zoomFit: () => set({ zm: 1, panX: 0, panY: 0 }), zoomLabel: Math.round(s.zm * 100) + '%',
       showZoomHint: !showText && !s.selecting && !s.pickSeat && inSpace,
       toggleFull: () => EMBEDDED ? this.emit('expand', { floor: SESSION.floor }) : set({ full: !s.full }), fullIcon: s.full ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5' : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5', showSide: !EMBEDDED&&!s.full,
-      pickSeat: s.pickSeat, seatMarkers, seatDraft: '3F ' + draft,
-      confirmSeat: async () => { if(taken.has(draft))return this.showToast('이미 사용 중인 자리예요');if(EMBEDDED){try{await SESSION.api.referenceSeat(draft);this.setState({pickSeat:false,seatDraft:null});this.emit('saved',{kind:'seat'});this.showToast('자리를 변경했어요');}catch(error){this.showToast(error.message);}return;}try{SESSION.current=await SESSION.api.completeOnboarding({name:me.name,role:me.role});}catch(error){return this.showToast(error.message);} this.updMe({ seat: draft, status: 'work', reason: null }); set({ pickSeat: false, seatDraft: null }); this.showToast('3층 ' + draft + ' 자리에 입장했어요'); },
+      pickSeat: s.pickSeat, seatOnboard: s.seatMode === 'onboard', seatMove: s.seatMode !== 'onboard', seatMarkers, seatDraft: draft, seatFrom: me.seat,
+      cancelPickSeat: () => this.setState({ pickSeat: false, seatDraft: null }),
+      confirmSeat: async () => { if(!draft)return this.showToast('먼저 빈 자리를 선택해 주세요');if(taken.has(draft))return this.showToast('이미 사용 중인 자리예요');if(EMBEDDED){try{await SESSION.api.referenceSeat(draft);const onboard=s.seatMode==='onboard';this.setState({pickSeat:false,seatDraft:null,seatMode:'move'});this.emit('saved',{kind:'seat',onboard});this.showToast(onboard?(floor + '층 ' + draft + ' 자리에 입장했어요'):'자리를 변경했어요');}catch(error){this.showToast(error.message);}return;}try{SESSION.current=await SESSION.api.completeOnboarding({name:me.name,role:me.role});}catch(error){return this.showToast(error.message);} this.updMe({ seat: draft, status: 'work', reason: null }); set({ pickSeat: false, seatDraft: null }); this.showToast((floor) + '층 ' + draft + ' 자리에 입장했어요'); },
       listItems, listCount: String(listItems.length), q: s.q, onQ: e => set({ q: e.target.value }),
       listTeam: () => set({ listScope: 'team' }), listAll: () => set({ listScope: 'all' }), listTeamStyle: { ...SEG(scopeTeam), height: 28, padding: '0 10px', fontSize: 12 }, listAllStyle: { ...SEG(!scopeTeam), height: 28, padding: '0 10px', fontSize: 12 },
       openMyCard: () => set({ modal: 'card', cardId: 'me' }),

@@ -3,6 +3,7 @@ import { COMPANY, FLOORS, MAP_SIZE, SEATS, SENSITIVITY, TRAITS } from '../data.j
 import { SKINS } from '../character.js';
 import { avatar, officeSVG } from '../map.js';
 import { Brand, Raw, Icon } from './Shared.jsx';
+import { isDemoMode } from '../api.js';
 import { look } from './helpers.js';
 
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -65,7 +66,7 @@ export default function ProfilePage({ api, me, people, onboarding, profileStash,
         <Brand onNavigate={navigate} />
         <span className="company">{COMPANY}</span>
         <div className="topbar-right">
-          <span className="demo-label">LOCAL DEMO</span>
+          {isDemoMode() && <span className="demo-label">LOCAL DEMO</span>}
           {!onboarding && (
             <button className="text-button" onClick={() => navigate('/office')}>사무실로 돌아가기 <Icon name="arrow" size={16} /></button>
           )}

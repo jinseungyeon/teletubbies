@@ -100,7 +100,7 @@ export function pixelIconSVG(name, px = 16, recolor = null) {
 
 // Pixel PNG icons from the SENSPACE design file (src/icons/<name>.png), with
 // their native pixel size. These take priority over the drawn sprites above.
-export const IMAGE_ICONS = {"coffee":[11,10],"focus":[12,11],"mute":[12,10],"discomfort":[11,10],"hot":[8,10],"ear":[10,11],"eye":[12,8],"help":[11,10],"noise":[12,10],"humid":[11,10],"outside":[12,9],"crowd":[12,9],"work":[12,10],"rest":[10,9],"lunch":[11,11],"smell":[11,9],"meeting":[12,8],"away":[12,10],"temp":[8,10],"nose":[11,9],"heart":[11,10],"off":[12,10],"phone":[12,10]};
+export const IMAGE_ICONS = {"coffee":[11,10],"focus":[12,11],"mute":[12,10],"discomfort":[11,10],"hot":[8,10],"ear":[10,11],"eye":[12,8],"help":[11,10],"noise":[12,10],"humid":[11,10],"outside":[12,9],"crowd":[12,9],"work":[12,10],"rest":[10,9],"lunch":[11,11],"smell":[11,9],"meeting":[12,8],"away":[12,10],"temp":[8,10],"nose":[11,9],"heart":[11,10],"off":[12,10],"phone":[12,10],"sun":[12,12]};
 // Markup for any icon. PNGs scale by whole pixels (1x, or 2x from 24px) so
 // they stay crisp; drawn sprites render at 16px, or 32px from 24px.
 export function iconHTML(name, size = 20) {

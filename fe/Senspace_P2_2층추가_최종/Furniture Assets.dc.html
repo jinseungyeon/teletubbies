@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/galmuri/dist/galmuri.css">
+<script src="sprites.js"></script>
+<style>
+html,body{margin:0;background:#262848;font-family:Pretendard,system-ui,sans-serif;color:#2e2a44;-webkit-font-smoothing:antialiased}
+a{color:#5b4fc9;text-decoration:none} a:hover{color:#2b2d55}
+</style>
+</helmet>
+<div style="min-height:100vh;padding:40px clamp(16px,4vw,56px) 64px;box-sizing:border-box;background:#262848;">
+  <div style="max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:28px;">
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;">
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="font:700 26px Galmuri11;color:#fbf7ef;letter-spacing:1px;">SENSPACE</div>
+          <div style="font:12px Galmuri11;color:#f0c04a;">✦ ASSET KIT</div>
+        </div>
+        <div style="font-size:28px;font-weight:800;color:#fff;letter-spacing:-0.5px;">사무실 가구 · 타일 · 아이콘</div>
+        <div style="font-size:14px;color:#b9b8d6;">모든 에셋은 1x 원본 픽셀 크기로 제작돼요. 메타버스 맵에서는 2배로 배치하고, 카드의 4x 링크로 고해상도 PNG를 받을 수 있어요.</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <sc-for list="{{ cats }}" as="c" hint-placeholder-count="6">
+          <div style="padding:7px 12px;border-radius:999px;background:#33365f;color:#dcdaf2;font-size:13px;font-weight:600;box-shadow:inset 0 -2px 0 #22244a;">{{ c.label }} <span style="color:#9f9cc8;font-weight:500;">{{ c.count }}</span></div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#fbf7ef;border-radius:20px;padding:24px;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff,0 24px 50px -24px rgba(0,0,0,.6);display:flex;flex-direction:column;gap:18px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:30px;border-radius:8px;background:#2b2d55;color:#fff;font:700 14px Galmuri11;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 #17183a;">01</div>
+        <div style="font-size:19px;font-weight:800;">가구 에셋</div>
+        <div style="font-size:13px;color:#8a8499;">{{ furnCount }}종 · 3/4 탑다운 뷰</div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(188px,1fr));gap:14px;">
+        <sc-for list="{{ furniture }}" as="f" hint-placeholder-count="12">
+          <div style="background:#fff;border:1px solid #e7dcc8;border-radius:14px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 2px 0 #e9dfcc,0 10px 20px -14px rgba(42,40,78,.35);">
+            <div style="height:170px;display:flex;align-items:center;justify-content:center;background-color:#f6f0e4;background-image:linear-gradient(45deg,#efe7d7 25%,transparent 25%,transparent 75%,#efe7d7 75%),linear-gradient(45deg,#efe7d7 25%,transparent 25%,transparent 75%,#efe7d7 75%);background-size:16px 16px;background-position:0 0,8px 8px;border-bottom:1px solid #eee4d2;">
+              <img src="{{ f.src }}" style="{{ f.style }}" alt="{{ f.name }}">
+            </div>
+            <div style="padding:11px 12px 12px;display:flex;flex-direction:column;gap:6px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <div style="font-size:14px;font-weight:700;">{{ f.name }}</div>
+                <div style="font-size:11px;font-weight:600;color:#6b5fd0;background:#ece8fb;padding:3px 7px;border-radius:6px;">{{ f.cat }}</div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:12px;color:#8a8499;">
+                <span style="font-family:Galmuri9,monospace;">{{ f.key }} · {{ f.size }}</span>
+                <a href="{{ f.hi }}" download="{{ f.file }}" style="font-weight:700;color:#5b4fc9;">4x ↓</a>
+              </div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:20px;">
+      <div style="background:#fbf7ef;border-radius:20px;padding:24px;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:34px;height:30px;border-radius:8px;background:#2b2d55;color:#fff;font:700 14px Galmuri11;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 #17183a;">02</div>
+          <div style="font-size:19px;font-weight:800;">바닥 · 벽 타일</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;">
+          <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="{{ t.style }}"></div>
+              <div style="font-size:13px;font-weight:700;">{{ t.name }}</div>
+              <div style="font:11px Galmuri9,monospace;color:#8a8499;margin-top:-4px;">{{ t.key }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:#fbf7ef;border-radius:20px;padding:24px;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff;display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:34px;height:30px;border-radius:8px;background:#2b2d55;color:#fff;font:700 14px Galmuri11;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 #17183a;">03</div>
+          <div style="font-size:19px;font-weight:800;">상태 · 감각 아이콘</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:10px;">
+          <sc-for list="{{ icons }}" as="i" hint-placeholder-count="12">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 4px;background:#fff;border:1px solid #ece2cf;border-radius:10px;box-shadow:0 2px 0 #ece2cf;">
+              <img src="{{ i.src }}" style="height:30px;image-rendering:pixelated;">
+              <div style="font-size:11px;color:#5d5870;font-weight:600;">{{ i.name }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="background:#fbf7ef;border-radius:20px;padding:24px;box-shadow:0 0 0 2px #3b3e6e,inset 0 1px 0 #fff;display:flex;flex-direction:column;gap:16px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div style="width:34px;height:30px;border-radius:8px;background:#2b2d55;color:#fff;font:700 14px Galmuri11;display:flex;align-items:center;justify-content:center;box-shadow:inset 0 -3px 0 #17183a;">04</div>
+        <div style="font-size:19px;font-weight:800;">캐릭터 파츠</div>
+        <div style="font-size:13px;color:#8a8499;">머리 6종 · 의상 4종 · 특별 스킨 4종 · 앞/뒤 방향</div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;">
+        <sc-for list="{{ chars }}" as="c" hint-placeholder-count="10">
+          <div style="width:104px;display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 0 10px;background:#fff;border:1px solid #ece2cf;border-radius:12px;box-shadow:0 2px 0 #ece2cf;">
+            <img src="{{ c.src }}" style="width:72px;height:112px;image-rendering:pixelated;">
+            <div style="font-size:12px;font-weight:700;color:#4a4560;">{{ c.name }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const FCAT = { '업무': 0, '회의': 1, '휴게': 2, '팬트리': 3, '식물': 4, '구조': 5, '소품': 6 };
+class Component extends DCLogic {
+  state = { ready: !!(window.SP && window.SP.ready) };
+  componentDidMount() {
+    if (!this.state.ready) this.t = setInterval(() => { if (window.SP && window.SP.ready) { clearInterval(this.t); this.setState({ ready: true }); } }, 50);
+  }
+  componentWillUnmount() { clearInterval(this.t); }
+  renderVals() {
+    if (!this.state.ready) return { furniture: [], tiles: [], icons: [], chars: [], cats: [], furnCount: '' };
+    const SP = window.SP;
+    const keys = Object.keys(SP.furniture);
+    const furniture = keys.map(k => {
+      const f = SP.furniture[k];
+      const s = Math.max(1, Math.min(4, Math.floor(Math.min(150 / f.w, 140 / f.h))));
+      return { key: k, name: f.name, cat: f.cat, size: f.w + '×' + f.h, src: 'assets/furniture/' + k + '.png', hi: 'assets/furniture-4x/' + k + '.png', file: k + '@4x.png',
+        style: { width: f.w * s, height: f.h * s, imageRendering: 'pixelated', filter: 'drop-shadow(0 3px 0 rgba(46,36,51,.12))' } };
+    }).sort((a, b) => FCAT[a.cat] - FCAT[b.cat]);
+    const cats = Object.keys(FCAT).map(c => ({ label: c, count: furniture.filter(f => f.cat === c).length }));
+    const tiles = Object.keys(SP.tiles).map(k => { const t = SP.tiles[k]; return { key: k, name: t.name,
+      style: { height: 96, borderRadius: 10, border: '1px solid #e7dcc8', backgroundImage: 'url(assets/tiles/' + k + '.png)', backgroundSize: (t.w * 3) + 'px ' + (t.h * 3) + 'px', imageRendering: 'pixelated', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,.4)' } }; });
+    const icons = Object.keys(SP.icons).map(k => ({ src: 'assets/icons/' + k + '.png', name: SP.icons[k].name }));
+    const chars = [
+      ...Object.keys(SP.hair).map((h, i) => ({ src: SP.char({ hair: h, hairColor: SP.hairColors[i], outfit: Object.keys(SP.outfits)[i % 4], top: SP.clothPalettes[i % 5][0], bottom: i < 4 && i % 2 ? 'skirt' : 'pants' }), name: SP.hair[h].name })),
+      ...Object.keys(SP.special).map(k => ({ src: SP.char({ special: k }), name: SP.special[k].name + ' 스킨' })),
+      { src: SP.char({ hair: 'bob' }, { back: true }), name: '뒷모습' },
+      { src: SP.char({ special: 'bear' }, { back: true }), name: '뒷모습 · 스킨' }
+    ];
+    return { furniture, furnCount: String(furniture.length), cats, tiles, icons, chars };
+  }
+}
+</script>
+</body>
+</html>

@@ -5,6 +5,8 @@ export const HEATMAP_VIEWS = [
   { key: 'smell', name: '후각', icon: 'smell' },
   { key: 'temperature', name: '온도', icon: 'temp' },
   { key: 'humidity', name: '습도', icon: 'humid' },
+  { key: 'lighting', name: '조명 지수', icon: 'sun' },
+  { key: 'crowding', name: '혼잡도', icon: 'crowd' },
 ];
 export const HEAT_COLORS = ['#519ee5', '#62bdab', '#e6cc61', '#e99a60', '#d96577'];
 // Larger values blend neighbours more; ~half a desk keeps each seat its own.

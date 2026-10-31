@@ -6,14 +6,22 @@ export const SENSES = [
   { key: 'humidity', name: '습도', icon: 'humid', color: '#6c9bb9', labels: ['매우 건조함', '건조함', '적당함', '습함', '매우 습함'] },
   { key: 'noise', name: '소음', icon: 'noise', color: '#cd8294', labels: ['매우 조용함', '조용함', '보통', '시끄러움', '매우 시끄러움'] },
   { key: 'smell', name: '냄새', icon: 'smell', color: '#79a78a', labels: ['없음', '약함', '보통', '강함', '매우 강함'] },
-  { key: 'discomfort', name: '불쾌 지수', icon: 'discomfort', color: '#a08abb', labels: ['매우 쾌적함', '쾌적함', '보통', '불편함', '매우 불편함'] },
+  { key: 'lighting', name: '조명 지수', icon: 'sun', color: '#c9a44c', labels: ['매우 어두움', '어두움', '적당함', '밝음', '매우 밝음'] },
   { key: 'crowding', name: '혼잡도', icon: 'crowd', color: '#8b8da5', labels: ['매우 한산함', '한산함', '보통', '붐빔', '매우 붐빔'] },
 ];
 export const TRAITS = [{key:'visual',name:'시각',icon:'eye'}, {key:'auditory',name:'청각',icon:'ear'}, {key:'olfactory',name:'후각',icon:'nose'}];
 export const STATUS = { working: '출근', away: '자리 비움', offline: '퇴근' };
 export const REASONS = ['점심', '미팅', '외근'];
-export const COMPANY = '온유 스튜디오';
-export const FLOORS = [2, 3];
+export let COMPANY = '온유 스튜디오';
+export function setCompanyName(name) {
+  if (name) COMPANY = name;
+}
+// Replaced with the signed-in company's floors once the Supabase adapter loads.
+export let FLOORS = [1];
+export function setCompanyFloors(numbers) {
+  const next = [...new Set(numbers.map(Number).filter(Number.isInteger))].sort((a, b) => a - b);
+  if (next.length) FLOORS = next;
+}
 export const MAP_SIZE = { width: 1200, height: 640 };
 // Inside of the building: a rectangle with the entrance wall notched out of the top-left corner.
 export const FLOOR = { left: 22, right: 1176, top: 34, bottom: 614, notch: { right: 252, bottom: 118 } };
@@ -55,19 +63,28 @@ function seed() {
     ['이수빈','서비스 기획자',6,'offline','','',3,'A-10'],
     ['윤지우','마케팅 매니저',7,'working','','오늘도 좋은 하루!',2,'A-01'],
   ];
-  return { session: null, users: profiles.map((p,i)=>({id:`demo-${i}`,name:p[0],role:p[1],avatar:p[2],status:p[3],reason:p[4],message:p[5],messageIcon:['coffee','focus','','hot','mute','','','heart'][i],floor:p[6],seat:p[7],email:i===0?'demo@sensory.fit':`colleague${i}@demo.local`,complete:true,sensitivity:{visual:3,auditory:i===4?5:4,olfactory:2},description:i===0?'작은 배려가 모이면 더 편안한 하루가 돼요.\n갑작스러운 큰 소리에는 조금 예민한 편이에요.':'집중할 때는 먼저 메시지로 알려주시면 좋아요.',senses:{temperature:i===3?4:3,humidity:3,noise:i===4?5:2,smell:1,discomfort:2,crowding:3},sensesAt:now,statusAt:now})) };
+  return { session: null, users: profiles.map((p,i)=>({id:`demo-${i}`,name:p[0],role:p[1],avatar:p[2],status:p[3],reason:p[4],message:p[5],messageIcon:['coffee','focus','','hot','mute','','','heart'][i],floor:p[6],seat:p[7],email:i===0?'demo@sensory.fit':`colleague${i}@demo.local`,complete:true,sensitivity:{visual:3,auditory:i===4?5:4,olfactory:2},description:i===0?'작은 배려가 모이면 더 편안한 하루가 돼요.\n갑작스러운 큰 소리에는 조금 예민한 편이에요.':'집중할 때는 먼저 메시지로 알려주시면 좋아요.',senses:{temperature:i===3?4:3,humidity:3,noise:i===4?5:2,smell:1,lighting:2,crowding:3},sensesAt:now,statusAt:now})) };
 }
 export function createAdapter(storage) {
-  function read() { const raw=storage.getItem(KEY); if(!raw) {const value=seed(); write(value); return value;} try {const d=JSON.parse(raw);if(!Array.isArray(d.users))throw new Error();return d;} catch {throw new Error('저장된 데모 데이터를 읽지 못했어요. 브라우저 사이트 데이터를 확인해 주세요.');} }
+  function read() { const raw=storage.getItem(KEY); if(!raw) {const value=seed(); write(value); return value;} try {const d=JSON.parse(raw);if(!Array.isArray(d.users))throw new Error();let changed=false;for(const u of d.users){if(u.senses&&'discomfort' in u.senses){if(!('lighting' in u.senses))u.senses.lighting=u.senses.discomfort;delete u.senses.discomfort;changed=true;}}if(changed)write(d);return d;} catch {throw new Error('저장된 데모 데이터를 읽지 못했어요. 브라우저 사이트 데이터를 확인해 주세요.');} }
   function write(data) { try { storage.setItem(KEY, JSON.stringify(data)); } catch { throw new Error('브라우저 저장 공간을 사용할 수 없어요. 저장 설정을 확인해 주세요.'); } }
   const api = {
     async me() {const d=read();return d.users.find(u=>u.id===d.session)||null;},
     async list() {return read().users.filter(u=>u.complete);},
-    async demo() {const d=read();d.session='demo-0';write(d);return d.users[0];},
+    async demo() {const d=read(),u=d.users[0];if(!u.seat){u.seat='A-02';u.referenceSeat='A-02';u.role=u.role||'프로덕트 디자이너';u.complete=true;}d.session=u.id;write(d);return u;},
+    // Demo stand-in for a personal link: starts as an invitee who has not set a
+    // seat yet, so the welcome → info → seat flow can be walked through locally.
+    async enter(token) {
+      const clean=String(token||'').trim();
+      if(!clean)throw new Error('초대 링크가 올바르지 않아요. 링크를 다시 확인해 주세요.');
+      const d=read(),u=d.users[0],keep={name:u.name,character:u.character,referenceCharacter:u.referenceCharacter};
+      Object.assign(u,{name:keep.name||'김민지',role:'',avatar:0,floor:3,seat:'',referenceSeat:'',complete:false,status:'offline',reason:'',message:'',messageIcon:'',awayNote:'',sensitivity:{},description:'',senses:{},sensesAt:null,character:keep.character,referenceCharacter:keep.referenceCharacter});
+      d.session=u.id;write(d);return u;
+    },
     async login(email) {const d=read(), u=d.users.find(u=>u.email===email.trim().toLowerCase());if(!u)throw new Error('이 브라우저에 등록된 계정이 없어요. 회원가입 또는 데모 입장을 이용해 주세요.');d.session=u.id;write(d);return u;},
     async signup({name,email,code}) {const d=read();if(code.trim().toUpperCase()!=='ONYU2026')throw new Error('데모 초대 코드 ONYU2026을 입력해 주세요.');if(d.users.some(u=>u.email===email.trim().toLowerCase()))throw new Error('이미 등록된 이메일이에요.');const u={id:crypto.randomUUID(),name:name.trim(),email:email.trim().toLowerCase(),role:'',avatar:0,floor:3,seat:'',complete:false,status:'offline',reason:'',message:'',sensitivity:{},description:'',senses:{},sensesAt:null};d.users.push(u);d.session=u.id;write(d);return u;},
     async logout() {const d=read();d.session=null;write(d);},
-    async completeOnboarding({name,role}) {if(!name?.trim()||!role?.trim())throw new Error('이름과 직무를 입력해 주세요.');return update(u=>{u.name=name.trim();u.role=role.trim();u.complete=true;});},
+    async completeOnboarding({name,role}) {if(!name?.trim()||!role?.trim())throw new Error('이름과 직무를 입력해 주세요.');return update(u=>{u.name=name.trim();u.role=role.trim();});},
     async referenceCharacter(cfg) {
       if(!cfg||!['bob','bun','long','short','twin','part'].includes(cfg.hair)||!['shirt','cardigan','hoodie','suit'].includes(cfg.outfit)||!['pants','skirt'].includes(cfg.bottom)||!['hairColor','eye','skin','top','pants'].every(k=>cfg[k]===undefined||/^#[0-9a-f]{6}$/i.test(cfg[k]))||!(cfg.special==null||['a_red','a_yellow','a_green','a_purple','bear','cat','frog','bunny'].includes(cfg.special)))throw new Error('캐릭터 설정을 확인해 주세요.');
       return update(u=>{u.referenceCharacter=JSON.parse(JSON.stringify(cfg));if(!u.character)u.character=normalizeCharacter();});
@@ -76,7 +93,7 @@ export function createAdapter(storage) {
       if(!/^[ABC]-(?:[1-9]|1[0-6])$/.test(seat))throw new Error('좌석을 확인해 주세요.');
       const d=read(),u=d.users.find(p=>p.id===d.session);if(!u)throw new Error('다시 로그인해 주세요.');
       if(d.users.some(p=>p.id!==u.id&&p.floor===u.floor&&(p.referenceSeat||(p.seat||'').replace(/-0+(\d+)/,'-$1'))===seat))throw new Error('이미 사용 중인 자리예요.');
-      return update(p=>{p.referenceSeat=seat;});
+      return update(p=>{p.referenceSeat=seat;p.seat=seat.replace(/-0*(\d+)$/,(_,n)=>'-'+String(n).padStart(2,'0'));p.complete=true;});
     },
     async profile(changes) {validateProfile(changes);const d=read(), u=d.users.find(u=>u.id===d.session);if(!u)throw new Error('다시 로그인해 주세요.');if(d.users.some(o=>o.id!==u.id&&o.complete&&o.floor===Number(changes.floor)&&o.seat===changes.seat))throw new Error('이미 배정된 좌석이에요. 다른 자리를 선택해 주세요.');Object.assign(u,{name:changes.name.trim(),role:changes.role.trim(),avatar:Number(changes.avatar),floor:Number(changes.floor),seat:changes.seat,sensitivity:changes.sensitivity,description:changes.description||'',complete:true});write(d);return u;},
     async character(look) {validateCharacter(look);return update(u=>{u.character=normalizeCharacter(look);});},

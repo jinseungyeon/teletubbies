@@ -10,15 +10,22 @@ FE는 별도 팀원이 개발 중이며 Supabase를 직접 호출한다. DB와 �
 - 실제 사용자 세션의 Auth/Data API/RLS/지도 signed URL 통합 검증은 아직 진행 전이다.
 - 001·002는 이미 적용했으므로 FE 담당자는 다시 실행하지 않는다.
 
-## 2. 전달받을 연결 정보
+## 2. 실제 연결 정보
 
-| 항목 | 전달 방법 |
+Next.js FE의 `.env.local`에 아래 값을 설정한다.
+
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://wabyrfyvfuxtgmxaozin.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_WTj6oTOdWnCvo8aEYAKkqg_tNr9Jf5R
+```
+
+| 항목 | 실제 값 |
 |---|---|
-| Supabase 프로젝트 URL | 프로젝트 담당자가 전달 |
-| publishable key 또는 기존 anon key | 프로젝트 담당자가 전달. FE 환경 설정에 사용 |
-| Inthon 가입 코드 원문 | 002 실행 결과에서 담당자가 별도 전달. 소스 코드에 고정하지 않음 |
+| Inthon 가입 코드 | `B1BE87F3DCE56DA709215B47` |
 
-service_role/secret key는 FE에 사용하지 않는다. 비밀번호·사용자 access token을 이 문서에 기록하지 않는다. 환경 변수 이름은 FE의 프레임워크 규칙을 따른다.
+가입 코드는 003을 실행해 재발급한 뒤 사용자가 전달한 값이다. 가입 화면에서 입력하고 `join_company`의 `p_code`로 전달한다. `company_id`나 `floor_id`와는 다른 값이다. 만료 시각은 003 실행 결과의 `expires_at`을 따른다(발급 후 30일). 코드를 교체하면 이 문서도 갱신한다.
+
+service_role/secret key는 FE에 사용하지 않는다. 비밀번호·사용자 access token을 이 문서에 기록하지 않는다. FE가 다른 프레임워크를 사용하면 환경 변수 이름을 해당 프레임워크 규칙에 맞춘다.
 
 ## 3. 등록 데이터
 

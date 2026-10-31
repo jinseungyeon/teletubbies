@@ -15,7 +15,7 @@
 - 원본과 SHA-256이 동일한 `be/storage_upload/map.png` 복사본 준비 및 사용자 업로드 완료.
 - floors·seats·storage.objects 연결 조회 결과: floor_number=1, seat_count=76, image_uploaded=true.
 
-가입 코드 원문은 이 기록에 저장하지 않는다. 002 결과의 원문을 사용자가 별도 보관한다.
+002 가입 코드 원문을 보관하지 못해 사용자가 003을 실행하여 재발급했다. 사용자가 전달한 새 원문과 프로젝트 URL·Publishable key는 요청에 따라 [FE 연동 안내](./FE_연동_안내.md)에 기록한다. 이 진행 기록에는 원문을 중복 저장하지 않는다.
 
 ## 다음 단계
 

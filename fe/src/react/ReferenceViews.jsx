@@ -40,7 +40,12 @@ export class MapView extends ReferenceView {
     const el = this.mapRef.current;
     if (!el) return;
     this._wheelEl = el;
-    this._wheelGuard = event => { if (event.cancelable) event.preventDefault(); };
+    // 카드처럼 마우스 휠로 스크롤하는 영역은 기본 동작(스크롤)을 살려 둔다.
+    this._wheelGuard = event => {
+      const target = event.target;
+      if (target && typeof target.closest === 'function' && target.closest('[data-wheel-scroll]')) return;
+      if (event.cancelable) event.preventDefault();
+    };
     el.addEventListener('wheel', this._wheelGuard, { passive: false });
   }
 
@@ -85,7 +90,7 @@ export class MapView extends ReferenceView {
             {v.bubbles.map((b, i) => (
               <div key={i} onPointerDown={v.stop} onClick={b.onClick} style={b.style}>
                 <img src={b.icon} alt="" style={{ height: 22, width: 22, objectFit: 'contain', imageRendering: 'pixelated' }} />
-                {b.showText && b.text && <span style={{ minWidth: 0, maxWidth: 104, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.text}</span>}
+                {b.showText && b.text && <span style={{ minWidth: 0, maxWidth: b.wide ? 160 : 104, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{b.text}</span>}
                 <span style={b.tail} />
               </div>
             ))}
@@ -130,7 +135,7 @@ export class MapView extends ReferenceView {
           </div>
           {v.hasRoomCard && (
             <div onPointerDown={v.stop} onWheel={v.stop} style={{ position: 'absolute', right: 14, top: 66, bottom: 14, width: 304, zIndex: 35, display: 'flex', flexDirection: 'column', pointerEvents: 'none' }}>
-              <div style={{ maxHeight: '100%', overflow: 'auto', pointerEvents: 'auto', background: '#fbf7ef', borderRadius: 16, boxShadow: '0 0 0 1.5px #3a3c63,0 6px 0 rgba(23,24,58,.35)', display: 'flex', flexDirection: 'column', gap: 12, padding: 14, boxSizing: 'border-box', cursor: 'default' }}>
+              <div data-wheel-scroll="" style={{ maxHeight: '100%', overflow: 'auto', pointerEvents: 'auto', background: '#fbf7ef', borderRadius: 16, boxShadow: '0 0 0 1.5px #3a3c63,0 6px 0 rgba(23,24,58,.35)', display: 'flex', flexDirection: 'column', gap: 12, padding: 14, boxSizing: 'border-box', cursor: 'default' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
                   <span style={{ width: 38, height: 38, borderRadius: 11, background: '#dbddea', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><img src={v.rc.typeIcon} alt="" style={{ height: 17, width: 21, objectFit: 'contain', imageRendering: 'pixelated' }} /></span>
                   <span style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}><span style={{ fontSize: 11.5, fontWeight: 700, color: '#8a8499' }}>{v.rc.path}</span><span style={{ fontSize: 18, fontWeight: 800, letterSpacing: -0.3 }}>{v.rc.name}</span></span>

@@ -2,7 +2,8 @@ import {normalizeCharacter,legacyCharacter,HAIR_COLORS,EYE_COLORS,OUTFIT_COLORS}
 export function referenceCharacter(user){
   if(user.referenceCharacter)return user.referenceCharacter;
   const c=normalizeCharacter(user.character||legacyCharacter(user.avatar));
-  return {hair:['bob','bun','long','short','long','twin'][c.hair],hairColor:HAIR_COLORS[c.hairColor].hex,eye:EYE_COLORS[c.eye].hex,outfit:['shirt','shirt','cardigan','hoodie','suit','shirt'][c.outfit],top:OUTFIT_COLORS[c.color],bottom:c.gender==='f'?'skirt':'pants',special:c.skin?'a_'+c.skin:null};
+  const tone=/^#[0-9a-f]{6}$/i.test(user.character?.skinTone||'')?user.character.skinTone:null;
+  return {hair:['bob','bun','long','short','long','twin'][c.hair],hairColor:HAIR_COLORS[c.hairColor].hex,eye:EYE_COLORS[c.eye].hex,outfit:['shirt','shirt','cardigan','hoodie','suit','shirt'][c.outfit],top:OUTFIT_COLORS[c.color],bottom:c.gender==='f'?'skirt':'pants',special:c.skin?'a_'+c.skin:null,...(tone?{skin:tone}:{})};
 }
 export const referenceSeat=user=>user.referenceSeat||(user.seat||'').replace(/-0+(\d+)/,'-$1');
 export function referencePeople(users,current){

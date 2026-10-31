@@ -12,9 +12,9 @@ const clone = value => JSON.parse(JSON.stringify(value));
 // 지도(1400×800) 좌표를 좌석 맵 박스 안의 퍼센트 위치로 바꾼다. 1·2층 모두 같은 지도 좌표를 쓴다.
 const F1_MAP = { width: 1400, height: 800 };
 const seatPosMap = seat => ({ left: `${seat.x / F1_MAP.width * 100}%`, top: `${seat.y / F1_MAP.height * 100}%` });
-const SENSI_COLORS = ['#7b94bb', '#cd8294', '#79a78a'];
+export const SENSI_COLORS = ['#7b94bb', '#cd8294', '#79a78a'];
 
-function ChoiceRow({ name, label, icon, labels, value, color, onChange }) {
+export function ChoiceRow({ name, label, icon, labels, value, color, onChange }) {
   return (
     <fieldset className="choice-row" style={{ '--sense': color || '#8b7cb0' }}>
       <legend><Icon name={icon} size={18} />{label}</legend>
@@ -79,13 +79,13 @@ export default function ProfilePage({ api, me, people, onboarding, profileStash,
   return (
     <div className="settings-page">
       <header className="topbar">
+        {!onboarding && (
+          <button className="text-button" onClick={() => navigate('/office')}><Icon name="back" size={16} />사무실로 돌아가기</button>
+        )}
         <Brand onNavigate={navigate} />
         <span className="company">{COMPANY}</span>
         <div className="topbar-right">
           {isDemoMode() && <span className="demo-label">LOCAL DEMO</span>}
-          {!onboarding && (
-            <button className="text-button" onClick={() => navigate('/office')}>사무실로 돌아가기 <Icon name="arrow" size={16} /></button>
-          )}
         </div>
       </header>
       <main className="settings-main">

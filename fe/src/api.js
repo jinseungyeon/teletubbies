@@ -127,11 +127,15 @@ const nearestHex = (hex, list) => {
   ), 0);
 };
 
-function toNativeCharacter(cfg) {
+// 참조 에디터(sprites.js)의 피부 톤 색. 저장 스키마(007)가 허용하는 값과 같다.
+const SKIN_TONES = ['#ffe2c6', '#ffd4b0', '#eab48a', '#c98a5e'];
+
+function toNativeCharacter(cfg, withTone = false) {
   const hair = { bob: 0, bun: 1, long: 2, twin: 5, short: 3 }[cfg?.hair] ?? 0;
   const outfit = { shirt: 0, cardigan: 2, hoodie: 3, suit: 4 }[cfg?.outfit] ?? 0;
   const skin = String(cfg?.special || '').replace(/^a_/, '');
-  return normalizeCharacter({
+  const tone = String(cfg?.skin || '').toLowerCase();
+  const native = normalizeCharacter({
     hair,
     hairColor: nearestSwatch(cfg?.hairColor || HAIR_COLORS[0].hex, HAIR_COLORS),
     eye: nearestSwatch(cfg?.eye || EYE_COLORS[0].hex, EYE_COLORS),
@@ -140,6 +144,8 @@ function toNativeCharacter(cfg) {
     color: nearestHex(cfg?.top || OUTFIT_COLORS[0], OUTFIT_COLORS),
     skin: ['red', 'yellow', 'green', 'purple'].includes(skin) ? skin : null,
   });
+  // 피부 톤은 선택 키다. 007 이전 DB는 8번째 키를 거부하므로 지원 여부를 먼저 확인한다.
+  return withTone && SKIN_TONES.includes(tone) ? { ...native, skinTone: tone } : native;
 }
 
 function mapCard(card) {
@@ -188,6 +194,16 @@ function mapCard(card) {
 function createSupabaseAdapter() {
   let cached = null;
   let pending = null;
+  // 007_reference_skin_tone.sql 적용 여부. DB가 피부 톤 카탈로그를 갖고 있을 때만 보낸다.
+  let toneReady = null;
+
+  async function hasSkinTone() {
+    if (toneReady !== null) return toneReady;
+    const { data, error } = await supabase.from('avatar_items')
+      .select('item_id').eq('category_id', 'skin_tone').limit(1);
+    toneReady = !error && Array.isArray(data) && data.length > 0;
+    return toneReady;
+  }
 
   async function currentUser() {
     const { data, error } = await supabase.auth.getSession();
@@ -447,7 +463,7 @@ function createSupabaseAdapter() {
       const ctx = await memberContext();
       const { error } = await supabase.rpc('save_character', {
         p_employee_id: ctx.membership.employee_id,
-        p_character: toNativeCharacter(cfg),
+        p_character: toNativeCharacter(cfg, await hasSkinTone()),
       });
       if (error) throw new Error(businessMessage(error));
       return api.me();
@@ -484,6 +500,20 @@ function createSupabaseAdapter() {
         .single();
       if (profileError) throw new Error(businessMessage(profileError));
 
+      return api.me();
+    },
+
+    // 온보딩 감각 단계: 좌석 배정 전에 민감도·설명만 저장한다.
+    async sensitivity(values, description = '') {
+      const ctx = await memberContext();
+      const profile = { description: String(description || '') };
+      for (const [feKey, dbKey] of Object.entries(SENSI_TO_DB)) profile[dbKey] = values?.[feKey];
+      const { error } = await supabase.from('sensory_profiles')
+        .update(profile)
+        .eq('employee_id', ctx.membership.employee_id)
+        .select('employee_id,visual_sensitivity,auditory_sensitivity,olfactory_sensitivity,description,updated_at')
+        .single();
+      if (error) throw new Error(businessMessage(error));
       return api.me();
     },
 
@@ -604,6 +634,7 @@ export function createApi() {
     referenceCharacter: cfg => (useLocal() ? local.referenceCharacter(cfg) : remote.referenceCharacter(cfg)),
     referenceSeat: seat => (useLocal() ? local.referenceSeat(seat) : remote.referenceSeat(seat)),
     profile: changes => (useLocal() ? local.profile(changes) : remote.profile(changes)),
+    sensitivity: (values, description) => (useLocal() ? local.sensitivity(values, description) : remote.sensitivity(values, description)),
     character: look => (useLocal() ? local.character(look) : remote.character(look)),
     status: (status, reason) => (useLocal() ? local.status(status, reason) : remote.status(status, reason)),
     awayNote: value => (useLocal() ? local.awayNote(value) : remote.awayNote(value)),

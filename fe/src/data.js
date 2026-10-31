@@ -126,6 +126,8 @@ export function createAdapter(storage) {
       return update(p=>{p.referenceSeat=key;p.seat=key.replace(/-0*(\d+)$/,(_,n)=>'-'+String(n).padStart(2,'0'));p.floor=floor;p.complete=true;});
     },
     async profile(changes) {validateProfile(changes);const d=read(), u=d.users.find(u=>u.id===d.session);if(!u)throw new Error('다시 로그인해 주세요.');if(d.users.some(o=>o.id!==u.id&&o.complete&&o.floor===Number(changes.floor)&&o.seat===changes.seat))throw new Error('이미 배정된 좌석이에요. 다른 자리를 선택해 주세요.');Object.assign(u,{name:changes.name.trim(),role:changes.role.trim(),avatar:Number(changes.avatar),floor:Number(changes.floor),seat:changes.seat,sensitivity:changes.sensitivity,description:changes.description||'',complete:true});write(d);return u;},
+    // 온보딩 감각 단계: 자리 선택 전에도 민감도만 저장할 수 있다.
+    async sensitivity(values, description='') {if(TRAITS.some(t=>!Number.isInteger(values?.[t.key])||values[t.key]<1||values[t.key]>5))throw new Error('시각·청각·후각 민감도를 모두 선택해 주세요.');if((description||'').length>300)throw new Error('추가 설명은 300자 이내로 입력해 주세요.');return update(u=>{u.sensitivity={...values};u.description=description||'';});},
     async character(look) {validateCharacter(look);return update(u=>{u.character=normalizeCharacter(look);});},
     async status(status, reason='') {if(!STATUS[status] || status==='away'&&reason!==''&&!REASONS.includes(reason))throw new Error('근태 상태를 확인해 주세요.');return update(u=>{u.awayNote=status==='away'&&u.status==='away'?u.awayNote||'':'';u.status=status;u.reason=status==='away'?reason:'';u.statusAt=new Date().toISOString();if(status==='offline'){u.senses={};u.sensesAt=null;u.message='';u.messageIcon='';}});},
     // Free-text detail while away, e.g. "16시 복귀" or "외근 후 바로 퇴근".

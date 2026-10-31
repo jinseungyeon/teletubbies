@@ -53,6 +53,25 @@ const inR = (r, x, y) => x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.
 const SEAT_ROOM = {}; SEATS.forEach(se => { const r = ROOMS.find(rr => rr.floor === se.floor && inR(rr, se.x + 18, se.y + 40)); SEAT_ROOM[se.id] = r ? r.id : null; });
 const ROOM_REASON = { '1-meet': 'meeting', '1-pantry': 'meal' };
 const ROOM_REASON_LABEL = { '1-meet': '미팅', '1-pantry': '점심' };
+// 미니 공간으로 이동한 사람은 좌석 없이 공간 안에 앉는다. 매 렌더 같은 자리에
+// 보이도록 사람 id에서 위치를 계산한다.
+const ROOM_BY_REASON = {};
+Object.keys(ROOM_REASON).forEach(id => { ROOM_BY_REASON[ROOM_REASON[id]] = id; });
+const roomSpot = (p, rm) => {
+  const key = String(p.sourceId || p.id);
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+  const rnd = n => { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return h % n; };
+  const x = rm.x + 22 + rnd(Math.max(1, rm.w - 58));
+  const y = rm.y + 34 + rnd(Math.max(1, rm.h - 94));
+  return { id: p.seat, side: 'n', x, y, z: y + 120 };
+};
+// "탕비실로 이동" / "회의 공간으로 이동" — 받침에 맞춰 조사를 붙인다.
+const ROOM_GO = rm => {
+  const w = rm.name.replace(/^미니\s*/, ''), c = w.charCodeAt(w.length - 1);
+  const jong = c >= 0xac00 && c <= 0xd7a3 ? (c - 0xac00) % 28 : 0;
+  return w + (jong && jong !== 8 ? '으로 이동' : '로 이동');
+};
 const UPD = [3, 7, 1, 12, 5, 2, 9, 4, 6, 15, 8];
 const di = s => Math.max(1, Math.min(5, Math.round(1 + Math.abs(s.temp - 3) + Math.abs(s.humid - 3) * 0.5 + (s.temp >= 4 && s.humid >= 4 ? 1 : 0))));
 const sv = (p, k) => k === 'discomfort' ? di(p.senses) : p.senses[k];
@@ -222,6 +241,7 @@ class Component extends DCLogic {
   setDraft(patch) { this.setState(st => ({ ed: { ...st.ed, draft: { ...st.ed.draft, ...patch } } })); }
   openEditor(from, meOpt) { const me = meOpt || this.state.people.find(p => p.id === 'me'); this.setState({ modal: 'editor', menu: false, ed: { from, step: 'face', otab: me.cfg.special ? 'special' : 'basic', gender: me.cfg.bottom === 'skirt' ? 'f' : 'm', draft: { ...window.SP.defaultChar, ...me.cfg } } }); }
   randomCfg() { const SP = window.SP; return { ...SP.defaultChar, hair: pick(Object.keys(SP.hair)), hairColor: pick(SP.hairColors), eye: pick(SP.eyeColors), skin: pick(SP.skinTones), ...pick(OUTF.f.concat(OUTF.m)), special: null }; }
+  reloadNotif(){try{const n=JSON.parse(localStorage.getItem('senspace.notif')||'null');if(n&&typeof n.master==='boolean'&&n.items&&['team','floor','fav'].includes(n.scope))this.setState(st=>({notif:{...st.notif,...n,items:{...st.notif.items,...n.items}}}));}catch(e){}}
   notify(body) {
     const n = this.state.notif;
     if(!n.master)return this.showToast('웹 알림이 꺼져 있어요.');
@@ -258,27 +278,43 @@ class Component extends DCLogic {
     // people placement
     const seatMap = {}; SEATS.forEach(se => { seatMap[se.id] = se; });
     const placed = s.people.filter(p=>!EMBEDDED||p.floor===SESSION.floor).flatMap(p => {
-      const se = seatMap[p.id === 'me' && s.pickSeat ? (s.seatDraft || p.seat) : p.seat];
-      if (se && se.floor === (p.floor || 1)) return [{ p, se, present: p.status === 'work' || (p.id === 'me' && s.pickSeat), room: SEAT_ROOM[se.id] }];
+      // 자리 고르는 중에는 초안 좌석에 그린다.
+      if (p.id === 'me' && s.pickSeat) {
+        const draftSeat = seatMap[s.seatDraft || p.seat];
+        return draftSeat && draftSeat.floor === (p.floor || 1) ? [{ p, se: draftSeat, present: true, room: SEAT_ROOM[draftSeat.id] }] : [];
+      }
+      // 미니 공간으로 이동한 사람: 원래 자리에는 반투명한 자리 비움 표시를 남기고,
+      // 공간 안에는 선명한 캐릭터를 앉힌다.
+      const awayRoom = p.status === 'away' ? ROOM_BY_REASON[p.reason] : null;
+      if (awayRoom && ROOM[awayRoom] && ROOM[awayRoom].floor === (p.floor || 1)) {
+        const home = seatMap[p.seat], out = [];
+        if (home && home.floor === (p.floor || 1)) out.push({ p, se: home, present: false, room: SEAT_ROOM[home.id], ghost: true, goneTo: awayRoom });
+        out.push({ p, se: roomSpot(p, ROOM[awayRoom]), present: true, room: awayRoom, inRoom: true });
+        return out;
+      }
+      const se = seatMap[p.seat];
+      if (se && se.floor === (p.floor || 1)) return [{ p, se, present: p.status === 'work', room: SEAT_ROOM[se.id] }];
       // 2층은 좌석이 곧 자리다. 좌석이 없는 사람은 지도에 그리지 않는다.
       return [];
     });
     const focus = (p, se) => { const o = placed.find(x => x.p.id === p.id); se = se || (o && o.se) || seatMap[p.seat]; if (!se) { set({ pop: p.id }); return; } const zm = Math.max(s.zm, 1.3 / z0); set({ pop: p.id, view: s.view === 'team' && !(se.x > s.team.x && se.x < s.team.x + s.team.w && se.y > s.team.y && se.y < s.team.y + s.team.h) ? 'all' : s.view, zm, panX: se.x + 18 - (base.x + base.w / 2), panY: se.y - 10 - (base.y + base.h / 2) }); };
     const glow = c => `drop-shadow(2px 0 0 ${c}) drop-shadow(-2px 0 0 ${c}) drop-shadow(0 2px 0 ${c}) drop-shadow(0 -2px 0 ${c})`;
     const mapPeople = placed.map(o => {
-      // Away and off-work need to read differently: away is only dimmed,
-      // off-work fades out and turns grayscale.
-      const awayOff = o.present ? null : o.p.status === 'away' ? { opacity: 0.68, filter: 'grayscale(.15)' } : { opacity: 0.28, filter: 'grayscale(1)' };
+      // Away and off-work need to read differently: the seat left behind goes
+      // semi-transparent, the character inside a mini space stays crisp.
+      // Off-work fades out and turns grayscale.
+      const awayOff = o.inRoom ? null : o.ghost ? { opacity: 0.32, filter: 'grayscale(.5)' } : !o.present ? (o.p.status === 'away' ? { opacity: 0.68, filter: 'grayscale(.15)' } : { opacity: 0.28, filter: 'grayscale(1)' }) : null;
       return { name: o.p.name, img: C(o.p.cfg, { back: o.se.side === 's' }), onClick: () => !s.pickSeat && set({ pop: s.pop === o.p.id ? null : o.p.id }),
         style: { position: 'absolute', left: o.se.x, top: o.se.y, width: 36, height: 56, zIndex: o.se.z, cursor: 'pointer', opacity: awayOff ? awayOff.opacity : 1, filter: o.p.id === 'me' ? glow('#5d6594') : s.pop === o.p.id ? glow('#f0c04a') : awayOff ? awayOff.filter : 'none', transition: 'transform .15s' } };
     });
-    const bubbles = s.pickSeat ? [] : placed.filter(o => (o.present && o.p.msg)||o.p.status==='away').map(o => {
-      const away=o.p.status==='away',reason=REASONS[o.p.reason||'short'];const bubbleText=away?(o.p.awayNote||(o.p.reason?reason.label:'')):o.p.msg;const al = !away&&o.p.alert, isMe = o.p.id === 'me';
+    const bubbles = s.pickSeat ? [] : placed.filter(o => !o.inRoom && ((o.present && o.p.msg)||o.p.status==='away')).map(o => {
+      const away=o.p.status==='away',reason=REASONS[o.p.reason||'short'];const gone=o.goneTo&&ROOM[o.goneTo]?ROOM_GO(ROOM[o.goneTo]):null;const bubbleText=away?(gone||o.p.awayNote||(o.p.reason?reason.label:'')):o.p.msg;const al = !away&&o.p.alert, isMe = o.p.id === 'me';
       const bg = al ? '#fff0f1' : '#fffdf8', bd = al ? '#f1b3ba' : isMe ? '#5d6594' : '#ded1bb', fg = al ? '#cf3646' : '#2e2a44';
-      const lift = showText && Math.round((o.se.x - 10) / 56) % 2 ? 22 : 0;
+      const showGone = showText || !!gone;
+      const lift = showGone && Math.round((o.se.x - 10) / 56) % 2 ? 22 : 0;
       const bx = Math.max(84, Math.min(MW - 84, o.se.x + 18));
-      return { icon:IC(away?reason.icon:(o.p.msgIcon||'heart')),text:bubbleText, showText, onClick: e => { if (e && e.stopPropagation) e.stopPropagation(); if (!s.pickSeat) set({ pop: s.pop === o.p.id ? null : o.p.id }); },
-        style: { position: 'absolute', left: bx, top: o.se.y - 8*k - lift, transform: `translate(-50%,-100%) scale(${k})`, transformOrigin: '50% 100%', zIndex: al ? 2200 : isMe ? 2100 : 2000, maxWidth: 150, display: 'flex', alignItems: 'center', gap: 5, padding: showText ? '4px 9px 4px 7px' : '5px', background: bg, border: '2px solid ' + bd, color: fg, borderRadius: 9, font: '12px Galmuri11', whiteSpace: 'nowrap', boxShadow: '0 3px 0 rgba(46,36,51,.18)', pointerEvents: 'auto', cursor: 'pointer' },
+      return { icon:IC(away?'away':(o.p.msgIcon||'message')),text:bubbleText, showText: showGone, wide: !!gone, onClick: e => { if (e && e.stopPropagation) e.stopPropagation(); if (!s.pickSeat) set({ pop: s.pop === o.p.id ? null : o.p.id }); },
+        style: { position: 'absolute', left: bx, top: o.se.y - 8*k - lift, transform: `translate(-50%,-100%) scale(${k})`, transformOrigin: '50% 100%', zIndex: al ? 2200 : isMe ? 2100 : 2000, maxWidth: gone ? 220 : 150, display: 'flex', alignItems: 'center', gap: 5, padding: showGone ? '4px 9px 4px 7px' : '5px', background: bg, border: '2px solid ' + bd, color: fg, borderRadius: 9, font: '12px "Pretendard","Galmuri11",sans-serif', whiteSpace: 'nowrap', boxShadow: '0 3px 0 rgba(46,36,51,.18)', pointerEvents: 'auto', cursor: 'pointer' },
         tail: { position: 'absolute', left: '50%', bottom: -6, width: 7, height: 7, marginLeft: -4.5, background: bg, borderRight: '2px solid ' + bd, borderBottom: '2px solid ' + bd, transform: 'rotate(45deg)' } };
     });
     let pop = {};
@@ -289,11 +325,11 @@ class Component extends DCLogic {
       const psx = tx + (po.se.x + 18) * z, psy = ty + (po.se.y - 2) * z;
       const flip = psy < 262;
       pop = { name: p.name, role: p.role, seat: p.seat, img: C(p.cfg),
-        statusIcon: IC(p.status === 'work' ? 'work' : p.status === 'off' ? 'off' : r.icon),
+        statusIcon: IC(p.status === 'work' ? 'work' : p.status === 'off' ? 'off' : 'away'),
         statusTitle: p.status === 'work' ? (p.task || '근무 중') : p.status === 'off' ? '퇴근했어요' : (p.awayNote||r.long),
         statusSub: p.status === 'work' ? p.since + ' 출근' : p.status === 'off' ? '내일 만나요' : p.since + '부터 자리 비움' + (p.task ? ' · ' + p.task : ''),
         statusStyle: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 11, background: st.bg, color: st.color },
-        hasMsg: !!p.msg && p.status === 'work', msg: p.msg, msgIcon: IC(p.msgIcon || 'heart'),
+        hasMsg: !!p.msg && p.status === 'work', msg: p.msg, msgIcon: IC(p.msgIcon || 'message'),
         avStyle: { width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: '#dbddea', display: 'block', flexShrink: 0 },
         openCard: () => { set({ pop: null }); if (EMBEDDED) this.emit('card',{id:p.sourceId}); else set({ modal: 'card', cardId: p.id }); },
         style: { position: 'fixed', left: Math.max(132, Math.min(vw - 132, psx)), top: flip ? psy + 56 : psy, transform: flip ? 'translate(-50%,0)' : 'translate(-50%,-100%)', zIndex: 5000, width: 250, display: 'flex', flexDirection: 'column', gap: 9, padding: 12, boxSizing: 'border-box', background: '#fbf7ef', border: '2px solid #2e2433', borderRadius: 14, boxShadow: '0 5px 0 rgba(46,36,51,.25)', cursor: 'default' },
@@ -362,7 +398,7 @@ class Component extends DCLogic {
         senses: R_SEN.map(se => { const a = ag.avg(se.k), lv = a == null ? 0 : Math.round(a); return { label: se.label, icon: IC(se.icon), val: a == null ? '—' : a.toFixed(1) + ' ' + se.lv[lv - 1], valStyle: { flex: 1, minWidth: 0, textAlign: 'right', fontSize: 11.5, fontWeight: 700, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: lv >= 4 ? se.color : '#8a8499' },
           blocks: [1, 2, 3, 4, 5].map(nv => ({ style: { width: 13, height: 12, borderRadius: 3, background: nv <= lv ? se.color : '#ebe3d3', boxShadow: nv <= lv ? 'inset 0 -2px 0 rgba(0,0,0,.18)' : 'inset 0 -2px 0 #dcd1bd' } })) }; }),
         info: [['층', fl.label], ['공간 유형', ty[0]], ['수용 인원', rcm.cap + '명'], ['미니맵 영역', '(' + rcm.x + ', ' + rcm.y + ') · ' + rcm.w + '×' + rcm.h]].map(([a, b]) => ({ k: a, v: b })),
-        mvLabel, mv: () => { if (mvOn && mv) mv(); }, mvStyle: { height: 44, flexShrink: 0, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: mvOn ? 'pointer' : 'default', background: mvOn ? '#2b2d55' : '#e7e0d2', color: mvOn ? '#fff' : '#9a9384', boxShadow: mvOn ? 'inset 0 -3px 0 #17183a' : 'none' } };
+        mvLabel, mvOn, mv: () => { if (mvOn && mv) mv(); }, mvStyle: { height: 44, flexShrink: 0, border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, cursor: mvOn ? 'pointer' : 'default', background: mvOn ? '#2b2d55' : '#e7e0d2', color: mvOn ? '#fff' : '#9a9384', boxShadow: mvOn ? 'inset 0 -3px 0 #17183a' : 'none' } };
     }
 
     // list
@@ -373,7 +409,7 @@ class Component extends DCLogic {
       .map(p => { const st = statusOf(p), r = p.status === 'away' ? REASONS[p.reason || 'short'] : null, sel = s.pop === p.id;
         const hasMsg = !!p.msg;
         const line = hasMsg ? p.msg : p.status === 'away' ? r.long : p.status === 'off' ? '퇴근했어요' : (p.task || '근무 중');
-        const icon = hasMsg ? (p.msgIcon || 'heart') : p.status === 'away' ? r.icon : p.status === 'off' ? 'off' : 'focus';
+        const icon = p.status === 'away' ? 'away' : hasMsg ? (p.msgIcon || 'message') : p.status === 'off' ? 'off' : 'focus';
         const dim = p.status !== 'work';
         return { name: p.name, isMe: p.id === 'me', img: C(p.cfg), line, icon: IC(icon), status: st.label, dot: dotStyle(st.dot),
           statusStyle: { display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: st.color, whiteSpace: 'nowrap' },
@@ -417,8 +453,8 @@ class Component extends DCLogic {
     const seN = SEN.find(x => x.k === s.mini);
 
     // onboarding
-    const obIdx = s.modal === 'editor' && s.ed && s.ed.from === 'onboard' ? 2 : scn === 'info' ? 1 : 3;
-    const obSteps = ['기본 정보', '캐릭터', '내 자리'].map((label, i) => { const on = i + 1 === obIdx, done = i + 1 < obIdx;
+    const obIdx = s.modal === 'editor' && s.ed && s.ed.from === 'onboard' ? 2 : scn === 'info' ? 1 : 4;
+    const obSteps = ['기본 정보', '캐릭터', '나의 감각', '내 자리'].map((label, i) => { const on = i + 1 === obIdx, done = i + 1 < obIdx;
       return { n: done ? '✓' : String(i + 1), label, line: i > 0, labelStyle: { fontSize: 13, fontWeight: 800, color: on ? '#2b2d55' : '#9a9384' },
         numStyle: { width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 12px Galmuri11', background: on ? '#2b2d55' : done ? '#5d6594' : '#e7e0d2', color: on || done ? '#fff' : '#9a9384' } }; });
     const sel = (label, value, options, key) => ({ label, options: options.map(v => ({ v, sel: v === value })), onChange: e => { set({ [key]: e.target.value }); if (key === 'job') this.updMe({ role: e.target.value }); } });

@@ -1,10 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { SENSES, FLOORS, COMPANY, QUICK_STATUS, charCount, todaySenses } from '../data.js';
+import { SENSES, FLOORS, COMPANY, QUICK_STATUS, SENSITIVITY, TRAITS, charCount, todaySenses } from '../data.js';
 import { HEATMAP_VIEWS, HEAT_COLORS } from '../heatmap.js';
 import { SESSION } from '../session.js';
 import { MapView, MiniView, SettingsView, EditorView } from './ReferenceViews.jsx';
+import { AssistantPanel, useAssistant } from './AssistantPanel.jsx';
 import { Brand, Icon, FaceAvatar } from './Shared.jsx';
 import SenseCard from './SenseCard.jsx';
+import { ChoiceRow, SENSI_COLORS } from './ProfilePage.jsx';
 import { statusInfo } from './helpers.js';
 
 const FLOOR_LIST = () => FLOORS.slice().sort((a, b) => b - a);
@@ -65,11 +67,19 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
   const [obName, setObName] = useState(me.name || '');
   const [obJob, setObJob] = useState(me.role || JOB_OPTIONS[0]);
   const [obRank, setObRank] = useState(RANK_OPTIONS[0]);
+  const [obSense, setObSense] = useState(() => ({ visual: me.sensitivity?.visual || 3, auditory: me.sensitivity?.auditory || 3, olfactory: me.sensitivity?.olfactory || 3 }));
+  const [obDesc, setObDesc] = useState(me.description || '');
   const [obBusy, setObBusy] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
   // Keep the job title the invitation already carries, even if it is not one of
   // the reference design's designer roles.
   const obJobs = me.role && !JOB_OPTIONS.includes(me.role) ? [me.role, ...JOB_OPTIONS] : JOB_OPTIONS;
   const mapRef = useRef(null);
+  // AI 비서. 예약 작업은 패널을 닫아도 계속 돌아야 해서 상태를 이 페이지에 둔다.
+  const ai = useAssistant({
+    me, people, api, refresh, toast,
+    onNotifChange: () => mapRef.current?.reloadNotif?.(),
+  });
 
   // The reference map reads the current floor from the session object while it
   // renders, so keep it in step with the floor picker.
@@ -94,6 +104,10 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
     }, 0);
     return () => clearTimeout(timer);
   }, [pendingFocus, floor]);
+
+  useEffect(() => {
+    if (aiOpen) ai.markRead();
+  }, [aiOpen, ai.msgs.length]);
 
   const clockedIn = me.status !== 'offline';
   const list = people.filter(u => (filter === 'all' || u.floor === me.floor) && `${u.name} ${u.role}`.includes(query));
@@ -223,7 +237,7 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
     setModal({ kind: 'settings' });
   }
 
-  // First entry: save name/job, customize the character, then pick a seat.
+  // First entry: name/job, character, sensory sensitivity, then the seat.
   async function saveBasicInfo(event) {
     event.preventDefault();
     if (!obName.trim()) { toast('이름을 입력해 주세요.'); return; }
@@ -240,12 +254,28 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
     }
   }
 
-  // The character editor hands back here: save -> seat picker, previous -> info.
+  async function saveSensitivity(event) {
+    event.preventDefault();
+    if (TRAITS.some(t => !Number.isInteger(obSense[t.key]))) { toast('시각·청각·후각 민감도를 모두 선택해 주세요.'); return; }
+    setObBusy(true);
+    try {
+      await api.sensitivity(obSense, obDesc.trim());
+      await refresh();
+      setObScreen(null);
+      setTimeout(() => mapRef.current?.startPickSeat('onboard'), 0);
+    } catch (error) {
+      toast(error.message);
+    } finally {
+      setObBusy(false);
+    }
+  }
+
+  // The character editor hands back here: save -> sensitivity step, previous -> info.
   async function onCharHost(type) {
     if (type === 'saved') {
       setObChar(false);
       await refresh();
-      setTimeout(() => mapRef.current?.startPickSeat('onboard'), 0);
+      setObScreen('sense');
     } else if (type === 'close') {
       setObChar(false);
       setObScreen('info');
@@ -301,6 +331,16 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
           })}
         </div>
         <div className="hub-top-right">
+          <button
+            type="button"
+            onClick={() => setAiOpen(open => !open)}
+            aria-pressed={aiOpen}
+            aria-label="AI 비서"
+            style={{ height: 40, padding: '0 14px 0 11px', borderRadius: 11, border: 'none', background: '#2b2d55', color: '#fff', display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 13.5, fontWeight: 700, boxShadow: 'inset 0 -3px 0 #17183a', position: 'relative', whiteSpace: 'nowrap' }}
+          >
+            <span style={{ font: '13px Galmuri11', color: '#f5c542' }}>✦</span>AI 비서
+            {ai.unread && !aiOpen && <span style={{ position: 'absolute', top: -4, right: -4, width: 11, height: 11, borderRadius: 3, background: '#e5534b', boxShadow: '0 0 0 2px #fbf7ef' }} />}
+          </button>
           <button className="hub-icon hub-bell" onClick={openSettings} aria-label="알림"><Icon name="bell" size={24} /></button>
           <div className="hub-menu-wrap">
             <button className="hub-me" onClick={() => setMenuOpen(!menuOpen)} aria-haspopup="menu" aria-expanded={menuOpen}>
@@ -382,8 +422,9 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
                 <p className="hub-loc"><Icon name="pin" size={14} />{me.floor}층 {me.seat}</p>
               </div>
               <div className="hub-profile-actions">
-                <button type="button" className="hub-seat-change" onClick={changeSeat} aria-label="자리 변경" title="자리 변경">
+                <button type="button" className="hub-seat-change" onClick={changeSeat} aria-label="자리 이동" title="자리 이동">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></svg>
+                  자리 이동
                 </button>
               </div>
             </div>
@@ -440,7 +481,7 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
                 </div>
                 <label className="hub-quick-label" htmlFor="quick-input">상태 메시지</label>
                 <form id="quick-form" className="hub-quick-input" onSubmit={submitMessage}>
-                  {me.messageIcon && <span className="hub-quick-icon"><Icon name={me.messageIcon} size={18} /></span>}
+                  {me.message && <span className="hub-quick-icon"><Icon name={me.messageIcon || 'message'} size={18} /></span>}
                   <input id="quick-input" name="message" value={message} onChange={e => setMessage(e.target.value)} placeholder="상태 메시지를 입력하고 Enter" autoComplete="off" enterKeyHint="done" />
                   <span id="quick-count" className={charCount(message) > 20 ? 'over' : ''}>{charCount(message)}/20</span>
                 </form>
@@ -479,6 +520,8 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
           </article>
         </section>
       </main>
+
+      {aiOpen && <AssistantPanel ai={ai} me={me} onClose={() => setAiOpen(false)} />}
 
       {modal?.kind === 'mini' && (
         <Modal title={`${floor}층 ${sense.name} 감각 지도`} kind="mini" wide onClose={() => setModal(null)}>
@@ -542,7 +585,9 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
               <i />
               <span className="ob-step"><b>2</b><span>캐릭터</span></span>
               <i />
-              <span className="ob-step"><b>3</b><span>내 자리</span></span>
+              <span className="ob-step"><b>3</b><span>나의 감각</span></span>
+              <i />
+              <span className="ob-step"><b>4</b><span>내 자리</span></span>
             </div>
             <div className="ob-title">기본 정보</div>
             <label className="ob-field">
@@ -564,6 +609,41 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
               </label>
             </div>
             <button type="submit" className="ob-primary" disabled={obBusy}>확인</button>
+          </form>
+        </div>
+      )}
+      {obScreen === 'sense' && (
+        <div className="ob-backdrop">
+          <form className="ob-card ob-info ob-sense" onSubmit={saveSensitivity}>
+            <div className="ob-steps">
+              <span className="ob-step done"><b>✓</b><span>기본 정보</span></span>
+              <i />
+              <span className="ob-step done"><b>✓</b><span>캐릭터</span></span>
+              <i />
+              <span className="ob-step on"><b>3</b><span>나의 감각</span></span>
+              <i />
+              <span className="ob-step"><b>4</b><span>내 자리</span></span>
+            </div>
+            <div className="ob-title">나의 감각 민감도</div>
+            <p className="ob-sense-intro">평소 나의 감각은 어떤가요? 세 가지 모두 선택해 주세요.</p>
+            {TRAITS.map((t, i) => (
+              <ChoiceRow
+                key={t.key}
+                name={`onboard-${t.key}`}
+                label={t.name + ' 민감도'}
+                icon={t.icon}
+                labels={SENSITIVITY}
+                value={obSense[t.key]}
+                color={SENSI_COLORS[i]}
+                onChange={level => setObSense(current => ({ ...current, [t.key]: level }))}
+              />
+            ))}
+            <label className="ob-field">
+              <span>추가 설명<small>선택</small></span>
+              <textarea rows={2} maxLength={300} value={obDesc} onChange={e => setObDesc(e.target.value)} placeholder="예: 갑작스러운 큰 소리에 쉽게 놀라요." />
+            </label>
+            <button type="submit" className="ob-primary" disabled={obBusy}>다음: 내 자리 고르기</button>
+            <button type="button" className="ob-back" onClick={() => { setObScreen(null); setObChar(true); }}>이전: 캐릭터 꾸미기</button>
           </form>
         </div>
       )}

@@ -1,18 +1,16 @@
-# Senspace v2
+# Sensory Fit
 
-`npm run dev` serves the existing app at http://localhost:5173, using `src/app.js` and `src/styles.css`.
-The full reference replacement was disconnected because it also changed UI outside the requested scope. Existing bottom cards, sensory controls, colleague list and previous spacing adjustments remain active.
+`npm run dev` serves the app at http://localhost:5173. It is a single Vite + React 18 application: one React tree, client-side routes (`/login`, `/signup`, `/office`, `/profile`, `/character`, `/onboarding`) and shared state. There are no iframes and no `postMessage` bridge.
 
-The new reference implementation is retained as an isolated, unfinished integration preview. `npm run build` generates `senspace-preview.html`, available at http://localhost:5173/senspace-preview.html. It never overwrites `index.html`. Requested features still need selective integration into the existing app; this preview is not the default app.
+The reference-derived surfaces (office map, team-area selection, seat picker, character editor, notification settings) live in `src/senspace.js` as a `DCLogic` subclass. `src/react/ReferenceViews.jsx` subclasses it and renders its `renderVals()` output as ordinary React; the host passes `me`, `people`, `floor` and a data `version` as props and receives host events (`card`, `expand`, `saved`, `close`) through `onHost`.
 
-- `src/senspace.template.html`: reference-derived office, onboarding, character editor, sensory card and settings markup.
-- `src/senspace-auth.html`: login/signup using the same visual language (the supplied reference starts with an invitation, not credential forms).
-- `src/senspace.js`: application state, map camera, team selection, seats, profile cards, character editing and notification preferences.
-- `src/senspace-bootstrap.js`: existing local account adapter and character migration.
-- `src/senspace.css`: local fonts and shared layout refinements.
-- `vendor/`: React 18.3.1 UMD files and the supplied reference's DC renderer. Normal startup does not require a CDN.
-- `src/sprites.js`, `src/assets/`: pixel character generator, tiles, furniture and icons copied from the supplied reference. The app no longer depends on the original reference folder.
+- `index.html` / `src/main.jsx`: Vite entry. Puts `React`, `DCLogic` and `window.SenspaceSession` in place, then boots the React app.
+- `src/react/App.jsx`: account/session state, routing, polling, logout and demo entry.
+- `src/react/OfficePage.jsx`, `ProfilePage.jsx`, `AuthPage.jsx`, `SenseCard.jsx`: office hub, profile/onboarding, login/signup and sensory card.
+- `src/senspace.js`: map camera, team rectangle, seats, profile cards, character editing and notification preferences. It is also executed directly by the Node tests, so it must not gain `import`/`export`.
+- `src/data.js`, `src/session.js`, `src/reference-model.js`: local account adapter, session snapshot and the model the map consumes.
+- `src/sprites.js`, `src/assets/`: pixel character generator, tiles, furniture and icons. Everything is local; the app does not depend on the original reference folder or any CDN.
 
-This remains a frontend local demo: accounts are browser-local, passwords are neither saved nor authenticated, and photo conversion samples colors locally rather than calling an AI service. Team bounds, notification preferences and each account's v2 profile persist in local storage. Browser notifications need user-granted permission; live events from other users require a backend connection. Selecting notification recipients records a preference; the local demo has no incoming multi-user event stream.
+This is a frontend local demo: accounts are browser-local, passwords are neither saved nor authenticated, and the media in `src/assets/` was copied from the supplied reference. Team bounds, notification preferences and each account's profile persist in local storage. Browser notifications need user-granted permission; live events from other users require a backend connection.
 
-`npm run check` checks JavaScript syntax. `npm test` covers reference seat layout, popover/card navigation, team drag bounds/persistence, character persistence, onboarding, notification preferences and existing modules. Tests use isolated in-memory storage and never change a real user's profile.
+`npm run check` runs syntax checks and a production build. `npm test` covers reference seat layout, popover/card navigation, team drag bounds/persistence, character persistence, onboarding, notification preferences and icon assets. Tests use isolated in-memory storage and never change a real user's profile.

@@ -92,7 +92,6 @@ const NOTIFS = [
 // Keep existing local accounts; store the richer v2 profile under that account.
 const SESSION = window.SenspaceSession;
 const EMBEDDED=!!SESSION.mode;
-const emitHost=(type,payload={})=>{if(EMBEDDED&&window.parent!==window)window.parent.postMessage({source:'senspace-component',type,...payload},location.origin);};
 const profileKey = () => 'senspace.v2.profile.' + (SESSION.current?.id || 'guest');
 function loadProfile(user) {
   const base={...P0[0],name:user?.name||P0[0].name,role:user?.role||P0[0].role,desc:user?.description||P0[0].desc};
@@ -103,6 +102,12 @@ function loadProfile(user) {
 const initialPeople=()=>EMBEDDED&&SESSION.current?SESSION.referencePeople(SESSION.users,SESSION.current):P0.map(p=>p.id==='me'?loadProfile(SESSION.current):{...p});
 
 class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    // Which reference surface this instance renders. In the old iframe build the
+    // host set this through ?component=; in the React app each view passes a prop.
+    this.mode = (props && props.mode) || SESSION.mode || '';
+  }
   state = { ready: !!(window.SP && window.SP.ready), screen: SESSION.current ? (SESSION.current.complete?'space':'welcome') : 'auth', authMode:location.pathname==='/signup'?'signup':'login', authError:'', authBusy:false, awayOpen:false, awayDraft:'', people: initialPeople(), modal: null, cardId: null, ed: null, menu: false, listScope: 'team', q: '', mini: null,
     vw: 900, vh: 520, view: 'all', zm: 1, panX: 0, panY: 0, full: false, pop: null, selecting: false, selRect: null, team: { x: 360, y: 330, w: 560, h: 420 },
     pickSeat: false, seatDraft: null, toast: null, job: SESSION.current?.role||'프로덕트 디자이너', rank: '팀원',
@@ -110,27 +115,33 @@ class Component extends DCLogic {
   mapRef = React.createRef();
   componentDidMount() {
     if(EMBEDDED){
-      this._onHost=e=>{
-        if(e.origin!==location.origin||e.source!==window.parent||e.data?.source!=='senspace-host')return;
-        if(e.data.type==='snapshot'&&e.data.me){SESSION.current=e.data.me;SESSION.users=e.data.people;SESSION.floor=e.data.floor;this.setState({people:SESSION.referencePeople(SESSION.users,SESSION.current),screen:'space'});}
-        if(e.data.type==='focus'){const id=e.data.id===SESSION.current.id?'me':e.data.id;this.setState({pop:id});}
-        if(e.data.type==='pick-seat')this.setState({pickSeat:true,seatDraft:null,pop:null});
-      };
-      window.addEventListener('message',this._onHost);
-      this._onKey=e=>{if(e.key==='Escape'){if(SESSION.mode==='map')this.setState({pop:null,pickSeat:false,selecting:false});else emitHost('close');}};
+      this._onKey=e=>{if(e.key==='Escape'){if(this.mode==='map')this.setState({pop:null,pickSeat:false,selecting:false});else this.emit('close');}};
       window.addEventListener('keydown',this._onKey);
-      this.setState({screen:'space'});
-      if(SESSION.mode==='editor'){this.openEditor('header');this._opened=true;}
-      if(SESSION.mode==='settings'){this.openSettings();this._opened=true;}
-      emitHost('ready');
+      let people=this.state.people;
+      if(this.props&&this.props.me){
+        SESSION.current=this.props.me;SESSION.users=this.props.people||[];SESSION.floor=this.props.floor;
+        people=SESSION.referencePeople(SESSION.users,SESSION.current);
+      }
+      this.setState({screen:'space',people});
+      if(this.mode==='editor'){this.openEditor('header',people.find(p=>p.id==='me'));this._opened=true;}
+      if(this.mode==='settings'){this.openSettings();this._opened=true;}
+      if(this.props&&this.props.onReady)this.props.onReady();
     }
     try { const t = JSON.parse(localStorage.getItem(EMBEDDED?'senspace.team.'+SESSION.floor:'senspace.team') || 'null'); if(t&&[t.x,t.y,t.w,t.h].every(Number.isFinite)&&t.x>=0&&t.y>=0&&t.w>=60&&t.h>=60&&t.x+t.w<=MW&&t.y+t.h<=MH)this.setState({team:t}); const n = JSON.parse(localStorage.getItem('senspace.notif') || 'null'); if(n&&typeof n.master==='boolean'&&n.items&&['team','floor','fav'].includes(n.scope))this.setState({notif:{...this.state.notif,...n,items:{...this.state.notif.items,...n.items}}}); } catch (e) {}
     if (!this.state.ready) this._t = setInterval(() => { if (window.SP && window.SP.ready) { clearInterval(this._t); this.setState({ ready: true }); } }, 40);
     this.attach();
   }
-  componentDidUpdate() { this.attach();if(EMBEDDED&&this._opened&&!this.state.modal)emitHost('close'); }
-  componentWillUnmount() { clearInterval(this._t); this._ro && this._ro.disconnect(); clearTimeout(this._toast);if(this._onHost)window.removeEventListener('message',this._onHost);if(this._onKey)window.removeEventListener('keydown',this._onKey); }
-  async saveAppearance(cfg){try{await SESSION.api.referenceCharacter(cfg);emitHost('saved',{kind:'character'});}catch(error){this.showToast(error.message);}}
+  componentDidUpdate(prevProps) {
+    if(this.props&&this.props.version!==undefined&&prevProps.version!==this.props.version&&this.props.me)this.applySnapshot(this.props.me,this.props.people,this.props.floor);
+    this.attach();
+    if(EMBEDDED&&this._opened&&!this.state.modal)this.emit('close');
+  }
+  componentWillUnmount() { clearInterval(this._t); this._ro && this._ro.disconnect(); clearTimeout(this._toast);if(this._onKey)window.removeEventListener('keydown',this._onKey); }
+  emit(type,payload={}){if(this.props&&typeof this.props.onHost==='function')this.props.onHost(type,payload);}
+  applySnapshot(me,users,floor){if(!me)return;SESSION.current=me;SESSION.users=users||[];SESSION.floor=floor;this.setState({people:SESSION.referencePeople(SESSION.users,SESSION.current),screen:'space'});}
+  focusPerson(id){const p=this.state.people.find(p=>p.sourceId===id||p.id===id);if(!p)return;this.setState({pop:p.id});}
+  startPickSeat(){this.setState({pickSeat:true,seatDraft:null,pop:null});}
+  async saveAppearance(cfg){try{await SESSION.api.referenceCharacter(cfg);this.emit('saved',{kind:'character'});}catch(error){this.showToast(error.message);}}
   attach() {
     const el = this.mapRef.current;
     if (el && el !== this._roEl) {
@@ -157,7 +168,7 @@ class Component extends DCLogic {
   closeDialog(){const patch={modal:null,ed:null};if(this.state.modal==='settings'&&this._notifSnapshot)patch.notif=this._notifSnapshot;this._notifSnapshot=null;this.setState(patch);}
   setEd(patch) { this.setState(st => ({ ed: { ...st.ed, ...patch } })); }
   setDraft(patch) { this.setState(st => ({ ed: { ...st.ed, draft: { ...st.ed.draft, ...patch } } })); }
-  openEditor(from) { const me = this.state.people.find(p => p.id === 'me'); this.setState({ modal: 'editor', menu: false, ed: { from, step: 'face', otab: me.cfg.special ? 'special' : 'basic', gender: me.cfg.bottom === 'skirt' ? 'f' : 'm', draft: { ...window.SP.defaultChar, ...me.cfg } } }); }
+  openEditor(from, meOpt) { const me = meOpt || this.state.people.find(p => p.id === 'me'); this.setState({ modal: 'editor', menu: false, ed: { from, step: 'face', otab: me.cfg.special ? 'special' : 'basic', gender: me.cfg.bottom === 'skirt' ? 'f' : 'm', draft: { ...window.SP.defaultChar, ...me.cfg } } }); }
   randomCfg() { const SP = window.SP; return { ...SP.defaultChar, hair: pick(Object.keys(SP.hair)), hairColor: pick(SP.hairColors), eye: pick(SP.eyeColors), skin: pick(SP.skinTones), ...pick(OUTF.f.concat(OUTF.m)), special: null }; }
   notify(body) {
     const n = this.state.notif;
@@ -218,7 +229,7 @@ class Component extends DCLogic {
         statusStyle: { display: 'flex', alignItems: 'center', gap: 10, padding: '9px 11px', borderRadius: 11, background: st.bg, color: st.color },
         hasMsg: !!p.msg && p.status === 'work', msg: p.msg, msgIcon: IC(p.msgIcon || 'heart'),
         avStyle: { width: 44, height: 44, borderRadius: 12, overflow: 'hidden', background: '#ece8fb', display: 'block', flexShrink: 0 },
-        openCard: () => EMBEDDED?emitHost('card',{id:p.sourceId}):set({ modal: 'card', cardId: p.id, pop: null }),
+        openCard: () => EMBEDDED?this.emit('card',{id:p.sourceId}):set({ modal: 'card', cardId: p.id, pop: null }),
         style: { position: 'fixed', left: Math.max(132, Math.min(vw - 132, psx)), top: flip ? psy + 56 : psy, transform: flip ? 'translate(-50%,0)' : 'translate(-50%,-100%)', zIndex: 5000, width: 250, display: 'flex', flexDirection: 'column', gap: 9, padding: 12, boxSizing: 'border-box', background: '#fbf7ef', border: '2px solid #2e2433', borderRadius: 14, boxShadow: '0 5px 0 rgba(46,36,51,.25)', cursor: 'default' },
         tailStyle: flip
           ? { position: 'absolute', left: '50%', top: -8, width: 12, height: 12, marginLeft: -7, background: '#fbf7ef', borderLeft: '2px solid #2e2433', borderTop: '2px solid #2e2433', transform: 'rotate(45deg)' }
@@ -348,7 +359,7 @@ class Component extends DCLogic {
 
     return {
       isAuth:scn==='auth',isSignup:s.authMode==='signup',isLogin:s.authMode==='login',authTitle:s.authMode==='signup'?'함께할 준비 되셨나요?':'다시 만나 반가워요',authSubmit:s.authMode==='signup'?'내 사무실 만들기':'사무실 입장하기',authError:s.authError,authBusy:s.authBusy,passwordAutocomplete:s.authMode==='signup'?'new-password':'current-password',showLogin:()=>{set({authMode:'login',authError:''});history.replaceState({},'','/login');},showSignup:()=>{set({authMode:'signup',authError:''});history.replaceState({},'','/signup');},submitAuth:e=>this.authenticate(e),enterDemo:()=>this.authenticate(null,true),
-      isEmail: scn === 'email', showSpace: (!EMBEDDED||SESSION.mode==='map')&&scn !== 'email'&&scn!=='auth', isWelcome: scn === 'welcome', isInfo: scn === 'info' && s.modal !== 'editor',
+      isEmail: scn === 'email', showSpace: (!EMBEDDED||this.mode==='map')&&scn !== 'email'&&scn!=='auth', isWelcome: scn === 'welcome', isInfo: scn === 'info' && s.modal !== 'editor',
       heroA: C({ hair: 'bob' }), heroB: C({ hair: 'short', hairColor: '#2e2a36', outfit: 'hoodie', top: '#5aa96a' }), heroC: C({ special: 'a_red' }),
       goWelcome: () => set({ screen: 'welcome' }), goInfo: () => set({ screen: 'info' }), goChar: () => me.name.trim()?this.openEditor('onboard'):this.showToast('이름을 입력해 주세요'),
       welcomeHeads: s.people.filter(p => p.team === 'd' && p.id !== 'me').slice(0, 5).map(p => C(p.cfg)), teamCount: String(s.people.filter(p => p.team === 'd' && p.id !== 'me').length),
@@ -377,9 +388,9 @@ class Component extends DCLogic {
       selecting: s.selecting,
       zoomIn: () => set({ zm: Math.min(4, s.zm * 1.25) }), zoomOut: () => set({ zm: Math.max(0.7, s.zm / 1.25) }), zoomFit: () => set({ zm: 1, panX: 0, panY: 0 }), zoomLabel: Math.round(s.zm * 100) + '%',
       showZoomHint: !showText && !s.selecting && !s.pickSeat && inSpace,
-      toggleFull: () => EMBEDDED ? emitHost('expand', { floor: SESSION.floor }) : set({ full: !s.full }), fullIcon: s.full ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5' : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5', showSide: !EMBEDDED&&!s.full,
+      toggleFull: () => EMBEDDED ? this.emit('expand', { floor: SESSION.floor }) : set({ full: !s.full }), fullIcon: s.full ? 'M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5' : 'M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5', showSide: !EMBEDDED&&!s.full,
       pickSeat: s.pickSeat, seatMarkers, seatDraft: '3F ' + draft,
-      confirmSeat: async () => { if(taken.has(draft))return this.showToast('이미 사용 중인 자리예요');if(EMBEDDED){try{await SESSION.api.referenceSeat(draft);this.setState({pickSeat:false,seatDraft:null});emitHost('saved',{kind:'seat'});this.showToast('자리를 변경했어요');}catch(error){this.showToast(error.message);}return;}try{SESSION.current=await SESSION.api.completeOnboarding({name:me.name,role:me.role});}catch(error){return this.showToast(error.message);} this.updMe({ seat: draft, status: 'work', reason: null }); set({ pickSeat: false, seatDraft: null }); this.showToast('3층 ' + draft + ' 자리에 입장했어요'); },
+      confirmSeat: async () => { if(taken.has(draft))return this.showToast('이미 사용 중인 자리예요');if(EMBEDDED){try{await SESSION.api.referenceSeat(draft);this.setState({pickSeat:false,seatDraft:null});this.emit('saved',{kind:'seat'});this.showToast('자리를 변경했어요');}catch(error){this.showToast(error.message);}return;}try{SESSION.current=await SESSION.api.completeOnboarding({name:me.name,role:me.role});}catch(error){return this.showToast(error.message);} this.updMe({ seat: draft, status: 'work', reason: null }); set({ pickSeat: false, seatDraft: null }); this.showToast('3층 ' + draft + ' 자리에 입장했어요'); },
       listItems, listCount: String(listItems.length), q: s.q, onQ: e => set({ q: e.target.value }),
       listTeam: () => set({ listScope: 'team' }), listAll: () => set({ listScope: 'all' }), listTeamStyle: { ...SEG(scopeTeam), height: 28, padding: '0 10px', fontSize: 12 }, listAllStyle: { ...SEG(!scopeTeam), height: 28, padding: '0 10px', fontSize: 12 },
       openMyCard: () => set({ modal: 'card', cardId: 'me' }),
@@ -405,3 +416,5 @@ class Component extends DCLogic {
     };
   }
 }
+// The React entry imports this file for its side effect and reads the class here.
+if (typeof window !== 'undefined') window.__SenspaceComponent = Component;

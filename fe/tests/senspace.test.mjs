@@ -56,14 +56,19 @@ test('login and signup validate and connect onboarding to the existing account a
   app.renderVals().goInfo();app.renderVals().goChar();assert.equal(app.state.ed.from,'onboard');
   await app.logout();assert.equal(app.state.screen,'auth');await app.authenticate(event({email:'test@example.com',password:'12345678'}));assert.equal(app.state.screen,'welcome');
 });
-test('reference template assets are local and available',()=>{
-  const html=readFileSync(new URL('../senspace-preview.html',import.meta.url),'utf8');assert.ok(html.includes('submitAuth'));assert.ok(!html.includes('<!-- APP_LOGIC -->'));
+test('the Vite entry only references local assets that exist',()=>{
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.ok(html.includes('type="module" src="/src/main.jsx"'));
   for(const match of html.matchAll(/(?:src|href)="(\/(?!\/)[^"{}]+)"|url\((\/[^)]+)\)/g)){
     const path=decodeURIComponent(match[1]||match[2]);assert.ok(existsSync(new URL('..'+path,import.meta.url)),path);
   }
-});
-test('the reference preview does not replace the existing app entry',()=>{
-  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
-  assert.ok(html.includes('src="/src/app.js"'));assert.ok(html.includes('href="/src/styles.css"'));
   assert.ok(!html.includes('senspace-bootstrap'));assert.ok(!html.includes('<x-dc>'));
+});
+test('the app is a single React tree with no iframe bridge',()=>{
+  for(const file of ['src/main.jsx','src/react/App.jsx','src/react/OfficePage.jsx','src/react/ReferenceViews.jsx']){
+    const text=readFileSync(new URL('../'+file,import.meta.url),'utf8');
+    assert.ok(!/postMessage|contentWindow|<iframe/i.test(text),file);
+  }
+  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+  assert.ok(!/senspace\.css|sprites\.js|app\.js/.test(html));
 });

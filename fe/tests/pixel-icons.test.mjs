@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { PIXEL_ICONS, ICON_PALETTE, IMAGE_ICONS, iconGrid, pixelIconSVG, iconHTML } from '../src/pixel-icons.js';
 import { QUICK_STATUS, SENSES, TRAITS } from '../src/data.js';
 
@@ -15,8 +15,12 @@ test('every sprite is 16x16 and only uses palette colours', () => {
 });
 
 test('every icon the app asks for has a sprite', () => {
-  const src = readFileSync(new URL('../src/app.js', import.meta.url), 'utf8') + readFileSync(new URL('../src/data.js', import.meta.url), 'utf8');
-  const used = new Set([...src.matchAll(/icon\('([a-z]+)'|icon:'([a-z]+)'/g)].map(m => m[1] || m[2]));
+  const reactDir = new URL('../src/react/', import.meta.url);
+  const views = readdirSync(reactDir).filter(f => f.endsWith('.jsx')).map(f => readFileSync(new URL(f, reactDir), 'utf8')).join('\n');
+  const src = views
+    + readFileSync(new URL('../src/react/helpers.js', import.meta.url), 'utf8')
+    + readFileSync(new URL('../src/data.js', import.meta.url), 'utf8');
+  const used = new Set([...src.matchAll(/<Icon\s+name="([a-z]+)"|\bicon\('([a-z]+)'|\bicon:\s*'([a-z]+)'/g)].map(m => m[1] || m[2] || m[3]));
   for (const list of [QUICK_STATUS.map(([key]) => key), SENSES.map(s => s.icon), TRAITS.map(t => t.icon)]) list.forEach(n => used.add(n));
   const missing = [...used].filter(n => !PIXEL_ICONS[n] && !IMAGE_ICONS[n]);
   assert.deepEqual(missing, []);

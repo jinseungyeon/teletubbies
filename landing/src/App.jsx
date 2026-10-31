@@ -1,6 +1,7 @@
 import { useRef } from 'react';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
+import Features from './components/Features.jsx';
 import Why from './components/Why.jsx';
 import OfficeBanner from './components/OfficeBanner.jsx';
 import './reference.css';
@@ -20,6 +21,7 @@ export default function App() {
       <Hero goContact={goContact} goFeatures={() => scrollTo('features')} />
       <OfficeBanner />
       <Why />
+      <Features />
     </main>
     <dialog ref={loginDialog} className="login-dialog" aria-labelledby="login-title">
       <h2 id="login-title">조직 로그인 안내</h2>

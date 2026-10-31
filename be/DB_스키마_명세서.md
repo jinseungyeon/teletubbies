@@ -1,5 +1,9 @@
 # SenseSpace P1 — DB 스키마 명세서
 
+> 006 후속 구현: employees.temporary_seat_id, employee_statuses.away_reason_text, 내부 통합 점유 테이블 private.seat_claims를 추가한다. 기본/자유 사유는 상호 배제하고 이동·복귀·실제 출근 시 감각은 모두 NULL이다. [006 SQL](./006_seat_movement.sql)과 [동작·API 계약](./자리이동_복귀_API.md)이 아래 초기 P1 설명보다 우선한다. 로컬 검증 완료, Supabase 적용 전이다.
+
+> 2026-11-01 후속 확장: 004에서 메시지를 20자로 제한하고 독립 이모티콘·캐릭터·팀·알림을 추가한다. 005는 실제 FE 항목 52개를 등록한다. 기존 감각은 6개를 유지하며 조명을 추가하지 않는다. AI 생성은 사용자 요청으로 보류한다. 001은 이전 설치 이력으로 보존한다.
+
 작성일: 2026-10-31
 
 상태: P1 전체 설계 및 초기화 SQL 작성 완료. PostgreSQL 17에서 설치·권한·동시성 검증 완료. 실제 Supabase 프로젝트 적용 및 Auth·Storage HTTP 통합 검증 전이다.
@@ -14,6 +18,10 @@
 | 퇴근 후 좌석 | 선택한 좌석을 유지한다. 다른 직원이 선택할 수 있는 빈 좌석으로 바뀌지 않는다. |
 | 퇴근 후 상태 메시지 | 퇴근 처리 시 함께 지운다. |
 | 상태 메시지 입력 가능 상태 | 출근·자리 비움에서만 작성·수정할 수 있다. 퇴근 상태에서는 차단한다. |
+| 메시지 최대 길이 | DB에서 20자. 004 적용 필요 |
+| 빠른 상태 | 이모티콘만 저장. 메시지와 근태를 바꾸지 않음 |
+| 업무 정보 탭 | 이름·직책·층·위치, 시각·청각·후각 민감도, 근태 |
+| 감각·AI | 기존 6개 유지. OpenAI 생성은 추후로 보류 |
 
 인증 계정 생성과 회사 가입은 별개다. 가입 코드를 입력하기 전에는 회사 소속이 없는 계정도 존재한다. 회사 변경·탈퇴 절차는 아직 정하지 않았다.
 
@@ -42,6 +50,7 @@ erDiagram
 | user_id | uuid | 아니요 | auth.users.id를 참조하는 FK. UNIQUE |
 | company_id | uuid | 아니요 | companies.id를 참조하는 FK |
 | seat_id | uuid | 예 | 미선택이면 NULL. UNIQUE. 같은 회사 좌석만 연결 |
+| temporary_seat_id | uuid | 예 | 006 추가. 같은 회사의 임시 목적지. 배정 좌석과 다르며 배정이 있어야 설정 가능 |
 | name | text | 아니요 | 표시 이름. 공백만 있는 이름 금지 |
 | job_title | text | 아니요 | 직책. 미입력 기본값은 빈 문자열 |
 | role | text | 아니요 | member / admin. 기본 member. FE 직접 변경 금지. admin 값만으로 관리 권한을 부여하지 않음 |
@@ -74,8 +83,9 @@ FE는 로그인 후 회사 가입 여부를 확인하고 소속 회사로 진입
 
 | 동작 | 좌석 | 상태 | 현재 감각 6개 | 상태 메시지 |
 |---|---|---|---|---|
-| 출근 | 기존 배정 유지 | working | 기존 값 유지. 퇴근 때 초기화되었다면 NULL | 유지 |
+| 출근 | 기존 배정 유지 | working | 실제 off_work→working 전환에서 모두 NULL(006) | 유지 |
 | 자리 비움 | 기존 배정 유지 | away | 기존 입력 유지 | 유지 |
+| 임시 이동·복귀 | 배정 유지, 목적지 별도 관리 | 이동 away / 복귀 working | 모두 NULL(006) | 유지 |
 | 퇴근 | 기존 배정 유지 | off_work | 모두 NULL로 초기화 | 삭제 |
 
 - 퇴근 RPC는 상태 변경·자리 비움 사유 초기화·현재 감각 초기화·상태 메시지 삭제를 같은 트랜잭션으로 처리하며, `employees.seat_id`는 변경하지 않는다. 하나라도 실패하면 전체를 취소한다.
@@ -162,7 +172,8 @@ FE는 로그인 후 회사 가입 여부를 확인하고 소속 회사로 진입
 | employee_id | uuid | PK + employees.id FK |
 | status | text | working / away / off_work. 기본 off_work |
 | away_reason | text | NULL 허용. away면 lunch / meeting / outside 중 하나 필수, 그 외 NULL |
-| status_message | text | 기본 빈 문자열. 최대 200자. off_work이면 반드시 빈 문자열 |
+| status_message | text | 기본 빈 문자열. 004 후 최대 20자. off_work이면 반드시 빈 문자열 |
+| quick_emoji_id | text | 004 추가. NULL 또는 quick_emojis.id FK. 메시지·근태와 독립 |
 | updated_at | timestamptz | 기본 now(), 수정 시 자동 갱신 |
 
 상태 전이 기본안: off_work → working → away, away → working, working/away → off_work. away → away 사유 변경과 같은 상태 재요청도 허용한다. off_work → away 직접 변경은 금지한다. 로그인·로그아웃·브라우저 종료로 상태를 자동 변경하지 않는다. 좌석 없이 출근은 기존 기본안대로 허용한다.
@@ -237,6 +248,25 @@ erDiagram
 
 기존 검토 문서에서 복수 회사 소속, 퇴근 시 메시지 유지, 메시지 직접 UPDATE 부분은 이번 문서로 대체한다. 이력 저장·근태 시간 집계·센서·추천·지도 편집기·직원 탈퇴·기업 관리자 UI는 P1 범위 밖이다.
 
-사용자 확정과 구별되는 구현 기본안: 문자열 길이(회사·직원명·직책 100 / 좌석명 50 / 메시지 200 / 설명 1,000), 민감도 초기 NULL, off_work→away 금지, 좌석 없는 출근 허용, 명시적 좌석 해제 지원, 계정당 가입 제한 5회/분, 활성 탭 5초 재조회. 제품 확정이 추가되면 후속 마이그레이션으로 조정한다. 색상 팔레트·민감도 세부 문구·토글 복수 선택은 FE 표시 정책이며 저장 스키마에는 영향을 주지 않는다.
+사용자 확정과 구별되는 구현 기본안: 문자열 길이(회사·직원명·직책 100 / 좌석명 50 / 설명 1,000), 민감도 초기 NULL, off_work→away 금지, 좌석 없는 출근 허용, 명시적 좌석 해제 지원, 계정당 가입 제한 5회/분, 활성 탭 5초 재조회. 메시지 20자는 사용자 확정이다. 제품 확정이 추가되면 후속 마이그레이션으로 조정한다. 색상 팔레트·민감도 세부 문구·토글 복수 선택은 FE 표시 정책이며 저장 스키마에는 영향을 주지 않는다.
+
+## 9. 004 후속 테이블
+
+| 테이블 / 필드 | 컬럼과 규칙 |
+|---|---|
+| quick_emojis | id text PK, emoji text UNIQUE, label text, sort_order integer. 실제 FE의 12개 이모티콘 |
+| teams | id uuid PK, company_id FK, name 1~100자. UNIQUE(company_id,name), UNIQUE(company_id,id) |
+| employees.team_id | NULL 또는 teams 복합 FK(company_id,team_id). 다른 회사 팀 금지. 일반 직원 수정 금지 |
+| avatar_categories | id text PK, label, required_for_basic boolean, sort_order. hair_style/hair_color/eye_color/outfit/outfit_color/special_skin/gender |
+| avatar_items | PK(category_id,item_id), category_id FK, label, asset_path NULL 허용, metadata JSON 객체, enabled boolean, sort_order |
+| employee_avatars | employee_id PK/FK ON DELETE CASCADE, selections JSON 객체 기본 {}, is_complete boolean 기본 false, updated_at 자동 갱신 |
+| notifications | id uuid PK, employee_id FK ON DELETE CASCADE, kind system/seat_changed, title 1~100자, body 최대 500자 기본 빈 문자열, read_at NULL 허용, created_at 기본 now() |
+| private.sensespace_migrations | version text PK, applied_at. 004 중복 적용 차단용. API 접근 금지 |
+
+위 컬럼은 NULL 허용이라고 표시한 항목 외에는 NOT NULL이다. 004 후 public 테이블은 13개, private는 3개다. 기존 직원에게 캐릭터 행을 보충하고 신규 직원 생성 트리거도 확장한다. 계정·회사·좌석·지도 데이터는 재생성하지 않는다.
+
+캐릭터는 본인 RPC만 수정, 같은 회사 직원은 조회한다. 카탈로그는 운영자만 변경하고 기존 항목은 삭제보다 비활성화해 렌더링 정보를 유지한다. 팀은 소속 회사만 조회하고 알림은 본인만 조회·읽음 처리한다. 카탈로그·팀·알림 직접 변경은 일반 직원에게 허용하지 않는다.
+
+005의 항목 52개는 실제 character.js에서 생성했다. 그림은 FE의 SVG 코드에 있으므로 asset_path는 NULL이고 metadata에 FE 인덱스와 색상 등이 있다. gender는 그림 실루엣 선택이다. 독립 이모티콘의 퇴근 중 변경/유지와 본인 좌석 변경 알림은 구현 기본안이며 사용자 추가 결정과 구별한다. 세부 API·적용 순서·검증은 [FE 코드 연동 검토](./FE_코드_연동_검토.md)를 따른다.
 
 공식 근거: [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [함수 권한](https://supabase.com/docs/guides/database/functions), [Storage 권한](https://supabase.com/docs/guides/storage/security/access-control).

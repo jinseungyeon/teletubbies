@@ -1,6 +1,8 @@
 # Supabase 적용 안내
 
-이 패키지는 새 Supabase 프로젝트의 초기 설치용이다. 작성한 SQL을 원격 프로젝트에 실행하지 않았다. `001`과 `002`는 실제 PostgreSQL 17에서 검증했지만 Supabase Auth·Storage·Data API의 HTTP 연동 검증은 아직 필요하다.
+> **현재 프로젝트 다음 적용은 006:** 001~005는 사용자 적용 확인이 끝났다. [006_seat_movement.sql](./006_seat_movement.sql)은 자리 이동·복귀·자유 사유 저장의 추가 마이그레이션이며 로컬 검증 완료, 원격 적용 전이다. [006 안내](./자리이동_복귀_API.md)를 따른다. 001·002·003·004를 다시 실행하지 않는다.
+
+001은 신규 프로젝트 초기 설치용이고 후속 파일은 기존 DB 확장용이다. 현재 프로젝트의 적용 이력은 [진행 기록](./Supabase_진행_기록.md)을 따른다. 로컬 PostgreSQL 검증과 별개로 Supabase Auth·Storage·Data API의 실제 사용자 HTTP 연동 검증은 아직 필요하다.
 
 ## 1. 파일 순서
 
@@ -8,6 +10,10 @@
 |---|---|---|
 | 001_sensespace_init.sql | 테이블·제약·함수·권한·RLS·비공개 버킷 설치 | 새 프로젝트에서 한 번 |
 | 002_company_setup_example.sql | 회사·층·예시 좌석·30일 가입 코드 생성 | 값 수정 후 필요 시 한 번 |
+| 003_rotate_inthon_join_code.sql | 기존 Inthon 코드만 교체 | 이미 재발급 완료. 다시 실행하면 현재 코드 무효화 |
+| 004_screen_features.sql | 메시지 20자·독립 이모티콘·캐릭터·팀·알림 확장 | 001이 설치된 DB에 한 번 |
+| 005_avatar_catalog.sql | 실제 FE 캐릭터 항목 52개 등록 | 004 이후. 카탈로그 갱신은 재실행 가능 |
+| 006_seat_movement.sql | 임시 이동·복귀·자유 사유·통합 점유 보호 | 현재 프로젝트의 다음 추가 SQL. 한 번, 아직 적용 전 |
 | tests/bootstrap.sql | 로컬 테스트용 Auth/Storage 모형 | Supabase에서는 실행 금지 |
 | tests/scenarios.sql | 가상 계정·회사로 수행하는 로컬 테스트 | Supabase에서는 실행 금지 |
 
@@ -89,3 +95,13 @@ API 호출 형식은 [API 명세서](./API_명세서.md)를 따른다. 특히 jo
 ## 8. 검증 근거
 
 [검토 결과](./설계_검토_결과.md)에 요구사항 대조와 실행 범위를 기록했다. 공식 근거: [Supabase 함수 권한](https://supabase.com/docs/guides/database/functions), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Storage 권한](https://supabase.com/docs/guides/storage/security/access-control).
+
+## 9. 004·005 실행 전후
+
+1. 기존 프로젝트의 개발 DB에서 20자 초과 메시지를 조회한다. 결과가 있으면 작성자와 내용을 정리한 뒤 진행한다. 자동으로 잘라내지 않는다.
+2. `004_screen_features.sql` 전체를 새 SQL Editor 쿼리에서 한 번 실행한다. 중복 실행은 migration version PK로 거부한다.
+3. 성공하면 `005_avatar_catalog.sql` 전체를 별도 쿼리에서 실행한다.
+4. `SELECT category_id,count(*) FROM public.avatar_items WHERE enabled GROUP BY category_id ORDER BY category_id;`로 7개 카테고리 합계 52개를 확인한다.
+5. 실제 사용자 세션으로 캐릭터 저장/조회, 20자 허용/21자 거부, 독립 이모티콘, 업무 정보 탭과 알림을 테스트한다.
+
+현재 FE는 localStorage 데모라 SQL만 실행해도 실제 서버 연결 화면이 되는 것은 아니다. FE 어댑터·Auth·실제 지도 연결 변경이 필요하다. 외부 OpenAI 호출은 구현하지 않았다.

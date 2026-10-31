@@ -1,5 +1,11 @@
 # SenseSpace P1 — API 명세서
 
+> 006 후속 구현: 자리 이동·복귀·자유 사유 저장과 location 조회 계약은 [자리이동·복귀 API](./자리이동_복귀_API.md)를 따른다. 기본/자유 사유는 상호 배제한다. 006은 로컬 검증 완료이며 Supabase 적용 전이다. 아래 초기 P1 계약과 다른 부분은 006 문서를 우선한다.
+
+> P2 공간 감각 집계의 최신 계산 규칙은 [감각 집계 최종안](./감각_집계_최종안.md)을 따른다. 계산 모듈·단위 테스트는 구현했지만 현재 P1 RPC에 공간 집계 엔드포인트가 추가되거나 적용된 것은 아니다.
+
+> 2026-11-01: 004·005 후속 SQL의 캐릭터·독립 이모티콘·업무 정보·팀·알림 계약은 [FE 코드 연동 검토 4절](./FE_코드_연동_검토.md)을 따른다. 사용자가 004·005 적용과 카탈로그 조회를 확인했다. 메시지는 사용자 확정 20자, 감각은 기존 6개다. OpenAI 생성은 보류한다.
+
 상태: P1 전체 API 설계 및 SQL 작성 완료. PostgreSQL 17 로컬 검증 완료. 실제 Supabase 프로젝트의 Auth·Data API·Storage HTTP 연동 검증 전이다.
 기준: [DB 스키마 명세서](./DB_스키마_명세서.md), [초기화 SQL](./001_sensespace_init.sql). 충돌 시 기존 검토 문서보다 이 두 명세서와 최신 사용자 결정을 우선한다.
 
@@ -19,7 +25,7 @@ RPC는 DB에 저장된 함수를 호출하는 방식이다. 퇴근처럼 여러 
 |---|---|---|---|
 | p_employee_id | UUID 문자열 | 예 | 본인 직원 ID |
 | p_status | 문자열 | 예 | working / away / off_work |
-| p_away_reason | 문자열 또는 null | 자리 비움 시 필수 | away일 때 lunch / meeting / outside. 그 외 null |
+| p_away_reason | 문자열 또는 null | 아니요 | away일 때 lunch / meeting / outside 또는 null(006 이후). 그 외 null |
 
 ### 퇴근 요청 예시
 
@@ -48,7 +54,7 @@ FE는 요청 성공 후 응답의 상태와 감각을 함께 반영하고 카드
 
 이미 off_work인 상태에서 재요청해도 감각과 메시지를 초기화한다. 로그인·로그아웃은 이 퇴근 요청을 대신 실행하지 않는다.
 
-성공 응답은 기존 문서의 `{ status: {...}, sensations: {...} }` 구조를 유지한다. `status` 객체에는 employee_id, status, away_reason, status_message, updated_at이 포함된다. `sensations` 객체에는 employee_id, 감각 6개 필드, updated_at이 포함된다. 퇴근 후 감각 객체 자체는 null이 아니며 내부 감각 값만 null이다.
+성공 응답은 기존 문서의 `{ status: {...}, sensations: {...} }` 키를 유지하고 006에서 location을 추가한다. `status`에는 away_reason_text도 추가된다. `sensations` 객체에는 employee_id, 감각 6개 필드, updated_at이 포함된다. 퇴근 후 감각 객체 자체는 null이 아니며 내부 감각 값만 null이다. 실제 출근 전환·이동·복귀 시 NULL 처리와 재요청 규칙은 006 문서를 따른다.
 
 ### 오류 계약
 
@@ -86,9 +92,9 @@ const { data, error } = await supabase.rpc('set_status_message', {
 | 본인 + off_work | EMPLOYEE_NOT_WORKING. 빈 문자열 변경 요청도 거부 |
 | 비로그인 | LOGIN_REQUIRED |
 | 다른 직원 또는 대상 없음 | NOT_YOUR_EMPLOYEE |
-| null 또는 200자 초과 메시지 | INVALID_STATUS_MESSAGE |
+| null 또는 20자 초과 메시지 | INVALID_STATUS_MESSAGE |
 
-최대 길이는 구현 기본안 200자를 적용했다. FE도 동일한 길이를 검사한다. SQL text 인자로의 변환 가능 여부는 Data API가 별도 검사하므로 FE는 문자열만 전달한다.
+최대 길이는 사용자 확정 20자를 적용한다(004 후속 SQL 필요). DB는 PostgreSQL length 기준 Unicode 코드 포인트를 센다. FE도 `[...text].length`로 검사한다. Intl.Segmenter의 grapheme 수와는 결합 이모지에서 차이가 있다. SQL text 인자로의 변환 가능 여부는 Data API가 별도 검사하므로 FE는 문자열만 전달한다.
 
 ### 권한과 동시 요청
 

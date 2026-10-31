@@ -1,0 +1,560 @@
+[
+  {
+    "category_id": "hair_style",
+    "item_id": "bob",
+    "label": "단발",
+    "sort_order": 0,
+    "metadata": {
+      "frontend_index": 0,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "hair_style",
+    "item_id": "bun",
+    "label": "올림머리",
+    "sort_order": 1,
+    "metadata": {
+      "frontend_index": 1,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "hair_style",
+    "item_id": "wavy",
+    "label": "웨이브",
+    "sort_order": 2,
+    "metadata": {
+      "frontend_index": 2,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "hair_style",
+    "item_id": "short",
+    "label": "짧은 머리",
+    "sort_order": 3,
+    "metadata": {
+      "frontend_index": 3,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "hair_style",
+    "item_id": "straight",
+    "label": "긴 생머리",
+    "sort_order": 4,
+    "metadata": {
+      "frontend_index": 4,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "hair_style",
+    "item_id": "braids",
+    "label": "땋은 머리",
+    "sort_order": 5,
+    "metadata": {
+      "frontend_index": 5,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "hair_color",
+    "item_id": "#6b4632",
+    "label": "브라운",
+    "sort_order": 0,
+    "metadata": {
+      "frontend_index": 0,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#6b4632"
+    }
+  },
+  {
+    "category_id": "hair_color",
+    "item_id": "#4a3226",
+    "label": "다크 브라운",
+    "sort_order": 1,
+    "metadata": {
+      "frontend_index": 1,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#4a3226"
+    }
+  },
+  {
+    "category_id": "hair_color",
+    "item_id": "#e8c27a",
+    "label": "블론드",
+    "sort_order": 2,
+    "metadata": {
+      "frontend_index": 2,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#e8c27a"
+    }
+  },
+  {
+    "category_id": "hair_color",
+    "item_id": "#2c2b3a",
+    "label": "블랙",
+    "sort_order": 3,
+    "metadata": {
+      "frontend_index": 3,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#2c2b3a"
+    }
+  },
+  {
+    "category_id": "hair_color",
+    "item_id": "#a2503f",
+    "label": "오번",
+    "sort_order": 4,
+    "metadata": {
+      "frontend_index": 4,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#a2503f"
+    }
+  },
+  {
+    "category_id": "hair_color",
+    "item_id": "#8e6342",
+    "label": "라이트 브라운",
+    "sort_order": 5,
+    "metadata": {
+      "frontend_index": 5,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#8e6342"
+    }
+  },
+  {
+    "category_id": "hair_color",
+    "item_id": "#ec9fb1",
+    "label": "핑크",
+    "sort_order": 6,
+    "metadata": {
+      "frontend_index": 6,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#ec9fb1"
+    }
+  },
+  {
+    "category_id": "hair_color",
+    "item_id": "#b7b4c0",
+    "label": "애쉬 그레이",
+    "sort_order": 7,
+    "metadata": {
+      "frontend_index": 7,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#b7b4c0"
+    }
+  },
+  {
+    "category_id": "eye_color",
+    "item_id": "#2b2433",
+    "label": "블랙",
+    "sort_order": 0,
+    "metadata": {
+      "frontend_index": 0,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#2b2433"
+    }
+  },
+  {
+    "category_id": "eye_color",
+    "item_id": "#6a4330",
+    "label": "브라운",
+    "sort_order": 1,
+    "metadata": {
+      "frontend_index": 1,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#6a4330"
+    }
+  },
+  {
+    "category_id": "eye_color",
+    "item_id": "#3f6fb5",
+    "label": "블루",
+    "sort_order": 2,
+    "metadata": {
+      "frontend_index": 2,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#3f6fb5"
+    }
+  },
+  {
+    "category_id": "eye_color",
+    "item_id": "#3f8a5c",
+    "label": "그린",
+    "sort_order": 3,
+    "metadata": {
+      "frontend_index": 3,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#3f8a5c"
+    }
+  },
+  {
+    "category_id": "eye_color",
+    "item_id": "#6d4fa3",
+    "label": "퍼플",
+    "sort_order": 4,
+    "metadata": {
+      "frontend_index": 4,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#6d4fa3"
+    }
+  },
+  {
+    "category_id": "eye_color",
+    "item_id": "#6f7480",
+    "label": "그레이",
+    "sort_order": 5,
+    "metadata": {
+      "frontend_index": 5,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#6f7480"
+    }
+  },
+  {
+    "category_id": "outfit",
+    "item_id": "tee",
+    "label": "티셔츠",
+    "sort_order": 0,
+    "metadata": {
+      "frontend_index": 0,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "outfit",
+    "item_id": "collar",
+    "label": "카라 셔츠",
+    "sort_order": 1,
+    "metadata": {
+      "frontend_index": 1,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "outfit",
+    "item_id": "cardigan",
+    "label": "카디건",
+    "sort_order": 2,
+    "metadata": {
+      "frontend_index": 2,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "outfit",
+    "item_id": "hoodie",
+    "label": "후드",
+    "sort_order": 3,
+    "metadata": {
+      "frontend_index": 3,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "outfit",
+    "item_id": "vest",
+    "label": "조끼",
+    "sort_order": 4,
+    "metadata": {
+      "frontend_index": 4,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "outfit",
+    "item_id": "overall",
+    "label": "멜빵",
+    "sort_order": 5,
+    "metadata": {
+      "frontend_index": 5,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#4f86c9",
+    "label": "블루 1",
+    "sort_order": 0,
+    "metadata": {
+      "frontend_index": 0,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#4f86c9"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#a9c4e0",
+    "label": "블루 2",
+    "sort_order": 1,
+    "metadata": {
+      "frontend_index": 1,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#a9c4e0"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#f3f0ea",
+    "label": "블루 3",
+    "sort_order": 2,
+    "metadata": {
+      "frontend_index": 2,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#f3f0ea"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#5a5a70",
+    "label": "블루 4",
+    "sort_order": 3,
+    "metadata": {
+      "frontend_index": 3,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#5a5a70"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#cf4a5b",
+    "label": "레드 1",
+    "sort_order": 4,
+    "metadata": {
+      "frontend_index": 4,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#cf4a5b"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#e48c84",
+    "label": "레드 2",
+    "sort_order": 5,
+    "metadata": {
+      "frontend_index": 5,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#e48c84"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#f2d9c3",
+    "label": "레드 3",
+    "sort_order": 6,
+    "metadata": {
+      "frontend_index": 6,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#f2d9c3"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#d9b49a",
+    "label": "레드 4",
+    "sort_order": 7,
+    "metadata": {
+      "frontend_index": 7,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#d9b49a"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#8fb98a",
+    "label": "그린 1",
+    "sort_order": 8,
+    "metadata": {
+      "frontend_index": 8,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#8fb98a"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#5fa36a",
+    "label": "그린 2",
+    "sort_order": 9,
+    "metadata": {
+      "frontend_index": 9,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#5fa36a"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#cfcbbd",
+    "label": "그린 3",
+    "sort_order": 10,
+    "metadata": {
+      "frontend_index": 10,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#cfcbbd"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#3c3f52",
+    "label": "그린 4",
+    "sort_order": 11,
+    "metadata": {
+      "frontend_index": 11,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#3c3f52"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#dcb88a",
+    "label": "브라운 1",
+    "sort_order": 12,
+    "metadata": {
+      "frontend_index": 12,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#dcb88a"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#b9773f",
+    "label": "브라운 2",
+    "sort_order": 13,
+    "metadata": {
+      "frontend_index": 13,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#b9773f"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#a0623a",
+    "label": "브라운 3",
+    "sort_order": 14,
+    "metadata": {
+      "frontend_index": 14,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#a0623a"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#7a4a35",
+    "label": "브라운 4",
+    "sort_order": 15,
+    "metadata": {
+      "frontend_index": 15,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#7a4a35"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#a18ad6",
+    "label": "퍼플 1",
+    "sort_order": 16,
+    "metadata": {
+      "frontend_index": 16,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#a18ad6"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#7a5fcf",
+    "label": "퍼플 2",
+    "sort_order": 17,
+    "metadata": {
+      "frontend_index": 17,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#7a5fcf"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#eaa7cf",
+    "label": "퍼플 3",
+    "sort_order": 18,
+    "metadata": {
+      "frontend_index": 18,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#eaa7cf"
+    }
+  },
+  {
+    "category_id": "outfit_color",
+    "item_id": "#d6d3d0",
+    "label": "퍼플 4",
+    "sort_order": 19,
+    "metadata": {
+      "frontend_index": 19,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#d6d3d0"
+    }
+  },
+  {
+    "category_id": "special_skin",
+    "item_id": "red",
+    "label": "빨강",
+    "sort_order": 0,
+    "metadata": {
+      "frontend_index": 0,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#e04a43"
+    }
+  },
+  {
+    "category_id": "special_skin",
+    "item_id": "yellow",
+    "label": "노랑",
+    "sort_order": 1,
+    "metadata": {
+      "frontend_index": 1,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#f3c63f"
+    }
+  },
+  {
+    "category_id": "special_skin",
+    "item_id": "green",
+    "label": "연두",
+    "sort_order": 2,
+    "metadata": {
+      "frontend_index": 2,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#83c44c"
+    }
+  },
+  {
+    "category_id": "special_skin",
+    "item_id": "purple",
+    "label": "보라",
+    "sort_order": 3,
+    "metadata": {
+      "frontend_index": 3,
+      "catalog_source": "fe/src/character.js",
+      "hex": "#7652c0"
+    }
+  },
+  {
+    "category_id": "gender",
+    "item_id": "f",
+    "label": "여자",
+    "sort_order": 0,
+    "metadata": {
+      "frontend_index": 0,
+      "catalog_source": "fe/src/character.js"
+    }
+  },
+  {
+    "category_id": "gender",
+    "item_id": "m",
+    "label": "남자",
+    "sort_order": 1,
+    "metadata": {
+      "frontend_index": 1,
+      "catalog_source": "fe/src/character.js"
+    }
+  }
+]

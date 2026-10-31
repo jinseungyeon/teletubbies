@@ -77,7 +77,7 @@ const { data, error } = await supabase.rpc('save_character', {
 });
 ```
 
-7개 키를 모두 전달한다. hair 0~5, hairColor 0~7, eye 0~5, outfit 0~5, color 0~19는 정수다. gender는 f/m, skin은 null 또는 red/yellow/green/purple다. 알 수 없는 키·문자열 숫자·소수·범위 밖 값은 INVALID_CHARACTER, 미등록/비활성 선택은 INVALID_AVATAR_ITEM, 타인 수정은 NOT_YOUR_EMPLOYEE다.
+7개 키를 모두 전달한다. hair 0~5, hairColor 0~7, eye 0~5, outfit 0~5, color 0~19는 정수다. gender는 f/m, skin은 null 또는 red/yellow/green/purple다. 알 수 없는 키·문자열 숫자·소수·범위 밖 값은 INVALID_CHARACTER, 미등록/비활성 선택은 INVALID_AVATAR_ITEM, 타인 수정은 NOT_YOUR_EMPLOYEE다. 007 적용 후에는 선택 키 `skinTone`(참조 에디터의 피부 톤 색 `#ffe2c6`/`#ffd4b0`/`#eab48a`/`#c98a5e`)을 8번째로 함께 보낼 수 있고, 응답 character에도 같은 색이 돌아온다.
 
 응답은 `{employee_id,selections,is_complete,updated_at,character}`. 카드와 내 소속의 `avatar`에도 `{selections,is_complete,updated_at,character}`가 추가된다. FE user.character에 avatar.character를 연결한다. 미완료 캐릭터의 character는 null이다. 특별 스킨만 선택해 완료한 경우 기본 파츠는 renderer 기본값으로 반환한다. 퇴근해도 외형은 유지한다.
 

@@ -24,7 +24,7 @@ export const PIXEL_ICONS = {
   minus: [E, E, E, E, E, E, E, '...kkkkkkkkkk...', '...kkkkkkkkkk...', E, E, E, E, E, E, E],
   pin: [E, '......rrrr......', '.....rrrrrr.....', '....rrrwwrrr....', '....rrwwwwrr....', '....rrwwwwrr....', '....rrrwwrrr....', '.....rrrrrr.....', '.....RrrrrR.....', '......RrrR......', '......RrrR......', '.......RR.......', '.......RR.......', E, E, E],
   map: [E, E, '..tttTTTTtttt...', '..tttTTTTtttt...', '..tnnTTTTtttt...', '..tnnTbbTtrrt...', '..tttTbbTtrrt...', '..tttTTTTtttt...', '..ttnTTTTtttt...', '..tnnTTnTtbbt...', '..tttTTTTtbbt...', '..tttTTTTtttt...', '..tttTTTTtttt...', E, E, E],
-  message: [E, E, '...wwwwwwwwww...', '..wwwwwwwwwwww..', '..wwwwwwwwwwww..', '..wwwkwwkwwkww..', '..wwwwwwwwwwww..', '..wwwwwwwwwwww..', '...llllllllll...', '....www.........', '....ww..........', '....w...........', E, E, E, E],
+  message: [E, E, '...wwwwwwwwww...', '..wwwwwwwwwwww..', '..wwwwwwwwwwww..', '..wwwkwwkwwkww..', '..wwwwwwwwwwww..', '..wwwwwwwwwwww..', '...wwwwwwwwww...', '....www.........', '....ww..........', '....w...........', E, E, E, E],
   card: [E, E, E, '..cccccccccccc..', '..cBBBBBBBBBBc..', '..cccccccccccc..', '..cssccclllllc..', '..cssccclllllc..', '..cTTcccwwwwcc..', '..cTTccclllccc..', '..cccccccccccc..', E, E, E, E, E],
   sound: [E, E, E, '..........b.....', '.......g...b....', '......gg.b..b...', '..gggggg..b.b...', '..ggdggg.b..b...', '..ggdggg.b..b...', '..gggggg..b.b...', '......gg.b..b...', '.......g...b....', '..........b.....', E, E, E],
   leaf: [E, E, '...........nnn..', '.........nnnnn..', '.......nnnnnnn..', '......nnnnnNnn..', '.....nnnnnNnnn..', '....nnnnnNnnnn..', '....nnnnNnnnn...', '....nnnNnnnn....', '....nnNnnnn.....', '....nNnnn.......', '...NN...........', '..N.............', E, E],
@@ -100,7 +100,7 @@ export function pixelIconSVG(name, px = 16, recolor = null) {
 
 // Pixel PNG icons from the SENSPACE design file (src/icons/<name>.png), with
 // their native pixel size. These take priority over the drawn sprites above.
-export const IMAGE_ICONS = {"coffee":[11,10],"focus":[12,11],"mute":[12,10],"discomfort":[11,10],"hot":[8,10],"ear":[10,11],"eye":[12,8],"help":[11,10],"noise":[12,10],"humid":[11,10],"outside":[12,9],"crowd":[12,9],"work":[12,10],"rest":[10,9],"lunch":[11,11],"smell":[11,9],"meeting":[12,8],"away":[12,10],"temp":[8,10],"nose":[11,9],"heart":[11,10],"off":[12,10],"phone":[12,10]};
+export const IMAGE_ICONS = {"coffee":[11,10],"focus":[12,11],"mute":[12,10],"discomfort":[11,10],"hot":[8,10],"ear":[10,11],"eye":[12,8],"help":[11,10],"noise":[12,10],"humid":[11,10],"outside":[12,9],"crowd":[12,9],"work":[12,10],"rest":[10,9],"lunch":[11,11],"smell":[11,9],"meeting":[12,8],"away":[12,10],"temp":[8,10],"nose":[11,9],"heart":[11,10],"off":[12,10],"phone":[12,10],"sun":[12,12],"message":[14,12]};
 // Markup for any icon. PNGs scale by whole pixels (1x, or 2x from 24px) so
 // they stay crisp; drawn sprites render at 16px, or 32px from 24px.
 export function iconHTML(name, size = 20) {

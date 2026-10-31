@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { heatSamples, heatAt, heatColor, heatmapSVG, HEATMAP_VIEWS } from '../src/heatmap.js';
 
 const now = new Date('2026-10-31T05:00:00Z');
-const person = overrides => ({ floor:3, seat:'A-01', status:'working', sensesAt:now.toISOString(), senses:{noise:5,smell:1,temperature:4,humidity:2}, ...overrides });
+const person = overrides => ({ floor:3, seat:'A-01', status:'working', sensesAt:now.toISOString(), senses:{noise:5,smell:1,temperature:4,humidity:2,lighting:3,crowding:2}, ...overrides });
 
 test('each sensory map selects its own current value', () => {
-  const expected = { noise:5, smell:1, temperature:4, humidity:2 };
+  const expected = { noise:5, smell:1, temperature:4, humidity:2, lighting:3, crowding:2 };
   for (const {key} of HEATMAP_VIEWS) assert.deepEqual(heatSamples([person()],3,key,now),[{x:402,y:162,value:expected[key]}]);
 });
 

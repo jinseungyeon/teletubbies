@@ -12,6 +12,7 @@
     "check": "node --check src/senspace.js && node --check src/data.js && node --check src/map.js && node --check src/heatmap.js && node --check src/character.js && node --check src/pixel-icons.js && vite build"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.118.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

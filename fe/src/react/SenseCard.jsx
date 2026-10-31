@@ -13,7 +13,7 @@ const SENSES = [
   { key: 'temperature', label: '온도', icon: 'temp', color: '#f08a3c', lo: '추움', hi: '더움' },
   { key: 'humidity', label: '습도', icon: 'humid', color: '#4a8fe0', lo: '건조', hi: '습함' },
   { key: 'smell', label: '냄새', icon: 'smell', color: '#e0a020', lo: '약함', hi: '강함' },
-  { key: 'discomfort', label: '불쾌 지수', icon: 'discomfort', color: '#8f7ad8', lo: '쾌적', hi: '불쾌' },
+  { key: 'lighting', label: '조명 지수', icon: 'sun', color: '#c9a44c', lo: '어두움', hi: '밝음' },
   { key: 'crowding', label: '혼잡도', icon: 'crowd', color: '#4a4e72', lo: '여유', hi: '붐빔' },
 ];
 const pngIcon = (name, h, w) => <img src={`/src/icons/${name}.png`} alt="" aria-hidden="true" style={{ height: h, width: w, objectFit: 'contain', imageRendering: 'pixelated' }} />;

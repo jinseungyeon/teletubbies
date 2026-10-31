@@ -1,7 +1,7 @@
 import './sprites.js';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { createAdapter } from './data.js';
+import { createApi } from './api.js';
 import { SESSION } from './session.js';
 
 // The temporal office map is written as a DCLogic subclass and is executed
@@ -12,7 +12,7 @@ globalThis.DCLogic = React.Component;
 window.SenspaceSession = SESSION;
 SESSION.mode = 'inline';
 
-const api = createAdapter(window.localStorage);
+const api = createApi();
 
 async function boot() {
   await import('./senspace.js');

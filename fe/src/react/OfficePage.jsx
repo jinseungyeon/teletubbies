@@ -1,31 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { SENSES, FLOORS, QUICK_STATUS, charCount, todaySenses } from '../data.js';
-import { HEATMAP_VIEWS, HEAT_COLORS, heatSamples, heatmapSVG } from '../heatmap.js';
-import { officeSVG } from '../map.js';
+import { SENSES, FLOORS, COMPANY, QUICK_STATUS, SENSITIVITY, TRAITS, charCount, todaySenses } from '../data.js';
+import { HEATMAP_VIEWS, HEAT_COLORS } from '../heatmap.js';
 import { SESSION } from '../session.js';
-import { MapView, SettingsView } from './ReferenceViews.jsx';
-import { Brand, Raw, Icon, FaceAvatar } from './Shared.jsx';
+import { MapView, MiniView, SettingsView, EditorView } from './ReferenceViews.jsx';
+import { AssistantPanel, useAssistant } from './AssistantPanel.jsx';
+import { Brand, Icon, FaceAvatar } from './Shared.jsx';
 import SenseCard from './SenseCard.jsx';
-import { FLOOR_TEAMS, statusInfo } from './helpers.js';
+import { ChoiceRow, SENSI_COLORS } from './ProfilePage.jsx';
+import { statusInfo } from './helpers.js';
 
-const FLOOR_LIST = FLOORS.slice().sort((a, b) => b - a);
+const FLOOR_LIST = () => FLOORS.slice().sort((a, b) => b - a);
+const FLOOR_TABS = () => FLOORS.slice().sort((a, b) => a - b);
+const FLOOR_LABEL = { 1: { label: '1F 개발본부', short: '1F' }, 2: { label: '2F 발표실', short: '2F' } };
+const floorLabel = f => FLOOR_LABEL[f] || { label: `${f}F`, short: `${f}F` };
+const JOB_OPTIONS = ['프로덕트 디자이너', 'UX 리서처', '그래픽 디자이너', 'UI 디자이너', 'BX 디자이너'];
+const RANK_OPTIONS = ['팀원', '파트 리드', '팀장', '인턴'];
 
-function MiniCanvas({ people, floor, view }) {
-  const samples = heatSamples(people, floor, view);
-  const name = SENSES.find(s => s.key === view)?.name || '';
-  const label = `${floor}층 ${name} 감각 지도${samples.length ? `, 동료 ${samples.length}명의 체감 기준` : ', 공유된 감각 없음'}`;
-  return (
-    <div className="hub-mini-canvas" role="img" aria-label={label}>
-      <div className="hub-mini-frame">
-        <Raw html={officeSVG()} />
-        <Raw html={heatmapSVG(samples)} />
-        {!samples.length && <span className="hub-empty">지금 이 층에 공유된 감각이 없어요</span>}
-      </div>
-    </div>
-  );
-}
-
-function Modal({ title, kind, wide = false, onClose, children }) {
+function Modal({ title, kind, wide = false, full = false, onClose, children }) {
   useEffect(() => {
     document.body.classList.add('modal-open');
     const onKey = e => { if (e.key === 'Escape') onClose(); };
@@ -36,21 +27,31 @@ function Modal({ title, kind, wide = false, onClose, children }) {
     };
   }, [onClose]);
   return (
-    <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
-      <section className={`modal${wide ? ' wide' : ''}`} data-kind={kind} role="dialog" aria-modal="true" aria-labelledby="modal-title" tabIndex={-1}>
-        <header className="modal-header">
-          <h2 id="modal-title">{title}</h2>
-          <button className="icon-button" onClick={onClose} aria-label="닫기"><Icon name="close" size={20} /></button>
-        </header>
-        {children}
+    <div className={`modal-backdrop${full ? ' full' : ''}`} onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <section className={`modal${wide ? ' wide' : ''}`} data-kind={kind} role="dialog" aria-modal="true" aria-label={full ? title : undefined} aria-labelledby={full ? undefined : 'modal-title'} tabIndex={-1}>
+        {full ? (
+          <>
+            <button className="modal-full-close" onClick={onClose} aria-label="닫기"><Icon name="close" size={20} /></button>
+            {children}
+          </>
+        ) : (
+          <>
+            <header className="modal-header">
+              <h2 id="modal-title">{title}</h2>
+              <button className="icon-button" onClick={onClose} aria-label="닫기"><Icon name="close" size={20} /></button>
+            </header>
+            {children}
+          </>
+        )}
       </section>
     </div>
   );
 }
 
 export default function OfficePage({ api, me, people, version, refresh, toast, navigate, onLogout }) {
-  const [floor, setFloor] = useState(me.floor || 3);
-  const [filter, setFilter] = useState('all');
+  const [floor, setFloor] = useState(FLOORS.includes(me.floor) ? me.floor : (FLOOR_LIST()[0] || 1));
+  const [filter, setFilter] = useState('team');
+  const [countPop, setCountPop] = useState(null);
   const [query, setQuery] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
   const [awayOpen, setAwayOpen] = useState(false);
@@ -61,7 +62,24 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
   const [modal, setModal] = useState(null);
   const [settingsKey, setSettingsKey] = useState(0);
   const [pendingFocus, setPendingFocus] = useState(null);
+  const [obScreen, setObScreen] = useState(me.complete ? null : 'welcome');
+  const [obChar, setObChar] = useState(false);
+  const [obName, setObName] = useState(me.name || '');
+  const [obJob, setObJob] = useState(me.role || JOB_OPTIONS[0]);
+  const [obRank, setObRank] = useState(RANK_OPTIONS[0]);
+  const [obSense, setObSense] = useState(() => ({ visual: me.sensitivity?.visual || 3, auditory: me.sensitivity?.auditory || 3, olfactory: me.sensitivity?.olfactory || 3 }));
+  const [obDesc, setObDesc] = useState(me.description || '');
+  const [obBusy, setObBusy] = useState(false);
+  const [aiOpen, setAiOpen] = useState(false);
+  // Keep the job title the invitation already carries, even if it is not one of
+  // the reference design's designer roles.
+  const obJobs = me.role && !JOB_OPTIONS.includes(me.role) ? [me.role, ...JOB_OPTIONS] : JOB_OPTIONS;
   const mapRef = useRef(null);
+  // AI 비서. 예약 작업은 패널을 닫아도 계속 돌아야 해서 상태를 이 페이지에 둔다.
+  const ai = useAssistant({
+    me, people, api, refresh, toast,
+    onNotifChange: () => mapRef.current?.reloadNotif?.(),
+  });
 
   // The reference map reads the current floor from the session object while it
   // renders, so keep it in step with the floor picker.
@@ -69,6 +87,7 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
 
   useEffect(() => { setMessage(me.message || ''); }, [me.id, me.message]);
   useEffect(() => { setAwayDraft(me.awayNote || ''); }, [me.id, me.awayNote]);
+  useEffect(() => { if (me.complete) setObScreen(null); }, [me.complete]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -86,9 +105,12 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
     return () => clearTimeout(timer);
   }, [pendingFocus, floor]);
 
-  const countOf = status => people.filter(u => u.status === status).length;
+  useEffect(() => {
+    if (aiOpen) ai.markRead();
+  }, [aiOpen, ai.msgs.length]);
+
   const clockedIn = me.status !== 'offline';
-  const list = people.filter(u => (filter === 'all' || u.status === filter) && `${u.name} ${u.role}`.includes(query));
+  const list = people.filter(u => (filter === 'all' || u.floor === me.floor) && `${u.name} ${u.role}`.includes(query));
   const sense = SENSES.find(s => s.key === miniView) || SENSES[0];
   const cardUser = modal?.kind === 'card' ? (people.find(u => u.id === modal.id) || (modal.id === me.id ? me : null)) : null;
 
@@ -163,8 +185,13 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
   async function pickQuick(key) {
     const [, text] = QUICK_STATUS.find(([k]) => k === key);
     try {
-      await saveMessage(text);
-      toast(`상태 메시지를 바꿨어요 · ${text}`);
+      if (me.message === text) {
+        await saveMessage('');
+        toast('상태 메시지를 지웠어요.');
+      } else {
+        await saveMessage(text);
+        toast(`상태 메시지를 바꿨어요 · ${text}`);
+      }
     } catch (error) {
       setQuickError(error.message);
     }
@@ -189,6 +216,7 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
   }
 
   function focusUser(user) {
+    setCountPop(null);
     if (user.floor !== floor) {
       setFloor(user.floor);
       setPendingFocus(user.id);
@@ -209,6 +237,51 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
     setModal({ kind: 'settings' });
   }
 
+  // First entry: name/job, character, sensory sensitivity, then the seat.
+  async function saveBasicInfo(event) {
+    event.preventDefault();
+    if (!obName.trim()) { toast('이름을 입력해 주세요.'); return; }
+    setObBusy(true);
+    try {
+      await api.completeOnboarding({ name: obName.trim(), role: obJob });
+      await refresh();
+      setObScreen(null);
+      setObChar(true);
+    } catch (error) {
+      toast(error.message);
+    } finally {
+      setObBusy(false);
+    }
+  }
+
+  async function saveSensitivity(event) {
+    event.preventDefault();
+    if (TRAITS.some(t => !Number.isInteger(obSense[t.key]))) { toast('시각·청각·후각 민감도를 모두 선택해 주세요.'); return; }
+    setObBusy(true);
+    try {
+      await api.sensitivity(obSense, obDesc.trim());
+      await refresh();
+      setObScreen(null);
+      setTimeout(() => mapRef.current?.startPickSeat('onboard'), 0);
+    } catch (error) {
+      toast(error.message);
+    } finally {
+      setObBusy(false);
+    }
+  }
+
+  // The character editor hands back here: save -> sensitivity step, previous -> info.
+  async function onCharHost(type) {
+    if (type === 'saved') {
+      setObChar(false);
+      await refresh();
+      setObScreen('sense');
+    } else if (type === 'close') {
+      setObChar(false);
+      setObScreen('info');
+    }
+  }
+
   const mapProps = {
     mode: 'map', me, people, floor, version, onHost: onMapHost, ref: mapRef,
   };
@@ -217,19 +290,57 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
     <div className="hub">
       <header className="hub-top">
         <Brand onNavigate={navigate} />
-        <label className="hub-pill hub-floor">
-          <span className="sr-only">사무실 층</span>
-          <select id="floor" value={floor} onChange={e => { setFloor(Number(e.target.value)); setMenuOpen(false); }}>
-            {FLOOR_LIST.map(f => <option key={f} value={f}>{f}층 · {FLOOR_TEAMS[f] || ''}</option>)}
-          </select>
-        </label>
+        <div className="hub-pill hub-floor" style={{ height: 38, gap: 10, padding: '0 14px 0 4px', borderRadius: 11, background: '#fff', border: '1.5px solid #e2d6c2', boxShadow: 'inset 0 -2px 0 #efe6d5', fontSize: 14, fontWeight: 700, whiteSpace: 'nowrap' }} role="group" aria-label="사무실 층">
+          <span style={{ display: 'flex', gap: 2, background: '#efe6d5', borderRadius: 9, padding: 2 }}>
+            {FLOOR_TABS().map(f => (
+              <button key={f} type="button" onClick={() => { setFloor(f); setMenuOpen(false); }} aria-pressed={floor === f}
+                style={{ height: 28, minWidth: 40, padding: '0 10px', border: 'none', borderRadius: 7, cursor: 'pointer', font: '12px Galmuri11', background: floor === f ? '#2b2d55' : 'transparent', color: floor === f ? '#fff' : '#6e6a84', boxShadow: floor === f ? 'inset 0 -2px 0 #17183a' : 'none' }}>
+                {floorLabel(f).short}
+              </button>
+            ))}
+          </span>
+          {COMPANY} › {floorLabel(floor).label}
+        </div>
         <div className="hub-pill hub-counts" id="hub-counts" aria-label="근무 현황">
-          <span><i className="dot all" />전체 <b>{people.length}</b></span>
-          <span><i className="dot working" />출근 <b>{countOf('working')}</b></span>
-          <span><i className="dot away" />자리 비움 <b>{countOf('away')}</b></span>
-          <span><i className="dot offline" />퇴근 <b>{countOf('offline')}</b></span>
+          {[['all', '전체'], ['working', '출근'], ['away', '자리 비움'], ['offline', '퇴근']].map(([key, label]) => {
+            const group = key === 'all' ? people : people.filter(u => u.status === key);
+            return (
+              <span key={key} className="hub-count" onMouseEnter={() => setCountPop(key)} onMouseLeave={() => setCountPop(null)}>
+                <i className={`dot ${key}`} />{label} <b>{group.length}</b>
+                {countPop === key && (
+                  <div className="hub-count-pop" role="dialog" aria-label={`${label} 명단`}>
+                    <div className="hub-count-pop-title">{label} · {group.length}명</div>
+                    {group.map(u => {
+                      const info = statusInfo(u);
+                      return (
+                        <button key={u.id} type="button" className="hub-count-person" onClick={() => focusUser(u)}>
+                          <span className={`hub-count-avatar ${u.status}`}><FaceAvatar user={u} size={30} /></span>
+                          <span className="hub-count-copy">
+                            <strong>{u.name}{u.id === me.id ? ' (나)' : ''}</strong>
+                            <small>{u.status === 'offline' ? `퇴근 · ${u.role}` : u.status === 'away' ? `${info.text} · ${u.floor}층 ${u.referenceSeat || u.seat}` : `${u.floor}층 ${u.referenceSeat || u.seat}`}</small>
+                          </span>
+                          <i className={`dot ${u.status === 'offline' ? 'offline' : u.status === 'away' ? 'away' : 'working'}`} />
+                        </button>
+                      );
+                    })}
+                    {!group.length && <span className="hub-count-empty">아무도 없어요</span>}
+                  </div>
+                )}
+              </span>
+            );
+          })}
         </div>
         <div className="hub-top-right">
+          <button
+            type="button"
+            onClick={() => setAiOpen(open => !open)}
+            aria-pressed={aiOpen}
+            aria-label="AI 비서"
+            style={{ height: 40, padding: '0 14px 0 11px', borderRadius: 11, border: 'none', background: '#2b2d55', color: '#fff', display: 'flex', alignItems: 'center', gap: 7, cursor: 'pointer', fontSize: 13.5, fontWeight: 700, boxShadow: 'inset 0 -3px 0 #17183a', position: 'relative', whiteSpace: 'nowrap' }}
+          >
+            <span style={{ font: '13px Galmuri11', color: '#f5c542' }}>✦</span>AI 비서
+            {ai.unread && !aiOpen && <span style={{ position: 'absolute', top: -4, right: -4, width: 11, height: 11, borderRadius: 3, background: '#e5534b', boxShadow: '0 0 0 2px #fbf7ef' }} />}
+          </button>
           <button className="hub-icon hub-bell" onClick={openSettings} aria-label="알림"><Icon name="bell" size={24} /></button>
           <div className="hub-menu-wrap">
             <button className="hub-me" onClick={() => setMenuOpen(!menuOpen)} aria-haspopup="menu" aria-expanded={menuOpen}>
@@ -257,12 +368,10 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
         <aside className="hub-side" aria-label="동료 목록">
           <div className="hub-side-head">
             <h2>동료 목록 <span id="colleague-count">({list.length})</span></h2>
-            <label className="hub-select">
-              <span className="sr-only">상태 필터</span>
-              <select id="filter-select" value={filter} onChange={e => setFilter(e.target.value)}>
-                {[['all', '전체'], ['working', '출근'], ['away', '자리 비움'], ['offline', '퇴근']].map(([k, n]) => <option key={k} value={k}>{n}</option>)}
-              </select>
-            </label>
+            <div className="hub-scope" role="group" aria-label="명단 범위">
+              <button type="button" className={filter === 'team' ? 'on' : ''} onClick={() => setFilter('team')} aria-pressed={filter === 'team'}>내 팀</button>
+              <button type="button" className={filter === 'all' ? 'on' : ''} onClick={() => setFilter('all')} aria-pressed={filter === 'all'}>전체</button>
+            </div>
           </div>
           <label className="hub-search">
             <Icon name="search" size={17} />
@@ -272,15 +381,23 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
           <div id="colleague-list" className="hub-list">
             {list.length ? list.map(u => {
               const info = statusInfo(u);
+              const att = u.status === 'offline' ? { icon: 'off', text: '퇴근', tone: 'offline' }
+                : u.status === 'away' ? { icon: 'away', text: '자리 비움', tone: 'away' }
+                  : { icon: 'work', text: '출근', tone: 'working' };
+              // Attendance lives in the pill on the right; the line under the name
+              // only carries the person's own status message.
+              const note = u.status === 'offline' ? '' : u.status === 'away' ? (u.awayNote || '') : (u.message || '');
               return (
                 <div key={u.id} className={`hub-row ${u.id === me.id ? 'selected' : ''}`}>
                   <button className="hub-row-main" onClick={() => focusUser(u)}>
                     <span className={`hub-row-avatar ${u.status}`}><FaceAvatar user={u} size={40} /></span>
                     <span className="hub-row-name">
                       <strong>{u.name}{u.id === me.id && <> <em>나</em></>}</strong>
-                      <small>{u.floor}층 {u.referenceSeat || u.seat}</small>
+                      {note && (
+                        <small className={`hub-row-line ${u.status === 'working' && info.tone === 'alert' ? 'alert' : ''}`}><Icon name={u.status === 'away' ? 'away' : info.icon} size={13} /><span>{note}</span></small>
+                      )}
                     </span>
-                    <span className={`hub-row-status ${info.tone}`}><Icon name={info.icon} size={15} />{info.text}</span>
+                    <span className={`hub-row-status ${att.tone}`}><Icon name={att.icon} size={14} />{att.text}</span>
                   </button>
                   <button className="hub-more" onClick={() => setModal({ kind: 'card', id: u.id })} aria-label={`${u.name} 감각 카드 자세히 보기`}><Icon name="more" size={18} /></button>
                 </div>
@@ -304,22 +421,24 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
                 <p>{me.role}</p>
                 <p className="hub-loc"><Icon name="pin" size={14} />{me.floor}층 {me.seat}</p>
               </div>
+              <div className="hub-profile-actions">
+                <button type="button" className="hub-seat-change" onClick={changeSeat} aria-label="자리 이동" title="자리 이동">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7" /></svg>
+                  자리 이동
+                </button>
+              </div>
             </div>
             <div className={`hub-clock ${me.status === 'away' ? 'idle' : ''}`} role="group" aria-label="근무 상태">
               <button data-status="working" className={me.status === 'working' ? 'active' : ''} aria-pressed={me.status === 'working'} onClick={() => setStatus('working')}><Icon name="check" size={15} />출근</button>
               <button data-status="offline" className={clockedIn ? '' : 'active'} aria-pressed={!clockedIn} onClick={() => setStatus('offline')}><Icon name="logout" size={15} />퇴근</button>
             </div>
             <div className="hub-away-row" role="group" aria-label="자리 비움">
-              <button type="button" onClick={toggleAway} className={me.status === 'away' ? 'active' : ''} aria-pressed={me.status === 'away'} aria-expanded={awayOpen} aria-controls="away-form"><Icon name="away" size={15} />자리 비움</button>
-              <button type="button" onClick={me.status === 'away' ? returnSeat : changeSeat}>
-                {me.status === 'away' ? <Icon name="check" size={15} /> : <Icon name="pin" size={15} />}
-                {me.status === 'away' ? '복귀' : '자리 변경'}
-              </button>
+              <button type="button" onClick={me.status === 'away' ? returnSeat : toggleAway} disabled={!clockedIn} className={me.status === 'away' ? 'active' : ''} aria-pressed={me.status === 'away'} aria-expanded={me.status === 'away' ? undefined : awayOpen} aria-controls={me.status === 'away' ? undefined : 'away-form'}><Icon name={me.status === 'away' ? 'check' : 'away'} size={15} />{me.status === 'away' ? '복귀' : '자리 비움'}</button>
             </div>
             {awayOpen ? (
               <form id="away-form" className="hub-away-note" onSubmit={saveAway}>
                 <label className="sr-only" htmlFor="away-input">자리 비움 사유</label>
-                <input id="away-input" name="note" value={awayDraft} onChange={e => setAwayDraft(e.target.value)} maxLength={30} placeholder="사유 입력 (예: 회의, 16시 복귀)" autoComplete="off" enterKeyHint="done" />
+                <input id="away-input" name="note" value={awayDraft} onChange={e => setAwayDraft(e.target.value)} maxLength={20} placeholder="사유 입력 (예: 회의, 16시 복귀)" autoComplete="off" enterKeyHint="done" />
                 <button type="submit" aria-label="자리 비움 사유 저장"><Icon name="check" size={16} /></button>
               </form>
             ) : <div className="hub-away-note-slot" aria-hidden="true" />}
@@ -362,7 +481,7 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
                 </div>
                 <label className="hub-quick-label" htmlFor="quick-input">상태 메시지</label>
                 <form id="quick-form" className="hub-quick-input" onSubmit={submitMessage}>
-                  {me.messageIcon && <span className="hub-quick-icon"><Icon name={me.messageIcon} size={18} /></span>}
+                  {me.message && <span className="hub-quick-icon"><Icon name={me.messageIcon || 'message'} size={18} /></span>}
                   <input id="quick-input" name="message" value={message} onChange={e => setMessage(e.target.value)} placeholder="상태 메시지를 입력하고 Enter" autoComplete="off" enterKeyHint="done" />
                   <span id="quick-count" className={charCount(message) > 20 ? 'over' : ''}>{charCount(message)}/20</span>
                 </form>
@@ -378,7 +497,7 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
                 <label className="hub-select">
                   <span className="sr-only">층 선택</span>
                   <select id="mini-floor" value={floor} onChange={e => setFloor(Number(e.target.value))}>
-                    {FLOOR_LIST.map(f => <option key={f} value={f}>{f}층</option>)}
+                    {FLOOR_LIST().map(f => <option key={f} value={f}>{f}층</option>)}
                   </select>
                 </label>
                 <label className="hub-select">
@@ -390,7 +509,9 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
                 <button className="hub-icon small" onClick={() => setModal({ kind: 'mini' })} aria-label="감각 지도 크게 보기"><Icon name="expand" size={17} /></button>
               </div>
             </div>
-            <MiniCanvas people={people} floor={floor} view={miniView} />
+            <div className="hub-mini-canvas" role="img" aria-label={`${floor}층 ${sense.name} 감각 지도`}>
+              <MiniView key={`mini-${floor}`} mode="map" me={me} people={people} floor={floor} version={version} view={miniView} />
+            </div>
             <div className="hub-legend">
               <span>{sense.labels[0]}</span>
               <i style={{ background: `linear-gradient(90deg,${HEAT_COLORS.join(',')})` }} />
@@ -400,13 +521,19 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
         </section>
       </main>
 
+      {aiOpen && <AssistantPanel ai={ai} me={me} onClose={() => setAiOpen(false)} />}
+
       {modal?.kind === 'mini' && (
         <Modal title={`${floor}층 ${sense.name} 감각 지도`} kind="mini" wide onClose={() => setModal(null)}>
-          <div className="hub-mini-large"><MiniCanvas people={people} floor={floor} view={miniView} /></div>
+          <div className="hub-mini-large">
+            <div className="hub-mini-canvas" role="img" aria-label={`${floor}층 ${sense.name} 감각 지도`}>
+              <MiniView key={`mini-expand-${floor}`} mode="map" me={me} people={people} floor={floor} version={version} view={miniView} />
+            </div>
+          </div>
         </Modal>
       )}
       {modal?.kind === 'map-expand' && (
-        <Modal title="사무실 지도 크게 보기" kind="map-expand" onClose={() => setModal(null)}>
+        <Modal title="사무실 지도 크게 보기" kind="map-expand" full onClose={() => setModal(null)}>
           <div className="map-expand">
             <MapView key={`expand-${floor}`} {...mapProps} ref={null} />
           </div>
@@ -432,6 +559,103 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
           floor={floor}
           version={version}
           onHost={(type) => { if (type === 'close') setModal(null); }}
+        />
+      )}
+
+      {obScreen === 'welcome' && (
+        <div className="ob-backdrop">
+          <div className="ob-card ob-welcome">
+            <div className="ob-heads">
+              {people.filter(u => u.id !== me.id && u.complete).slice(0, 5).map(u => (
+                <span key={u.id} className="ob-head"><FaceAvatar user={u} size={54} /></span>
+              ))}
+            </div>
+            <span className="ob-place">{COMPANY} · {me.floor}층 사무실</span>
+            <h2>안녕하세요, {me.name}님!</h2>
+            <p>동료 {people.filter(u => u.id !== me.id && u.complete).length}명이 이미 사무실에 있어요.<br />프로필을 만들고 내 자리에 앉아볼까요?</p>
+            <button type="button" className="ob-primary" onClick={() => setObScreen('info')}>프로필 설정하기</button>
+          </div>
+        </div>
+      )}
+      {obScreen === 'info' && (
+        <div className="ob-backdrop">
+          <form className="ob-card ob-info" onSubmit={saveBasicInfo}>
+            <div className="ob-steps">
+              <span className="ob-step on"><b>1</b><span>기본 정보</span></span>
+              <i />
+              <span className="ob-step"><b>2</b><span>캐릭터</span></span>
+              <i />
+              <span className="ob-step"><b>3</b><span>나의 감각</span></span>
+              <i />
+              <span className="ob-step"><b>4</b><span>내 자리</span></span>
+            </div>
+            <div className="ob-title">기본 정보</div>
+            <label className="ob-field">
+              <span>이름<small>초대장에서 가져왔어요</small></span>
+              <input value={obName} onChange={e => setObName(e.target.value)} maxLength={40} autoComplete="name" />
+            </label>
+            <div className="ob-row">
+              <label className="ob-field">
+                <span>직무</span>
+                <select value={obJob} onChange={e => setObJob(e.target.value)}>
+                  {obJobs.map(option => <option key={option} value={option}>{option}</option>)}
+                </select>
+              </label>
+              <label className="ob-field">
+                <span>직책 (선택)</span>
+                <select value={obRank} onChange={e => setObRank(e.target.value)}>
+                  {RANK_OPTIONS.map(option => <option key={option} value={option}>{option}</option>)}
+                </select>
+              </label>
+            </div>
+            <button type="submit" className="ob-primary" disabled={obBusy}>확인</button>
+          </form>
+        </div>
+      )}
+      {obScreen === 'sense' && (
+        <div className="ob-backdrop">
+          <form className="ob-card ob-info ob-sense" onSubmit={saveSensitivity}>
+            <div className="ob-steps">
+              <span className="ob-step done"><b>✓</b><span>기본 정보</span></span>
+              <i />
+              <span className="ob-step done"><b>✓</b><span>캐릭터</span></span>
+              <i />
+              <span className="ob-step on"><b>3</b><span>나의 감각</span></span>
+              <i />
+              <span className="ob-step"><b>4</b><span>내 자리</span></span>
+            </div>
+            <div className="ob-title">나의 감각 민감도</div>
+            <p className="ob-sense-intro">평소 나의 감각은 어떤가요? 세 가지 모두 선택해 주세요.</p>
+            {TRAITS.map((t, i) => (
+              <ChoiceRow
+                key={t.key}
+                name={`onboard-${t.key}`}
+                label={t.name + ' 민감도'}
+                icon={t.icon}
+                labels={SENSITIVITY}
+                value={obSense[t.key]}
+                color={SENSI_COLORS[i]}
+                onChange={level => setObSense(current => ({ ...current, [t.key]: level }))}
+              />
+            ))}
+            <label className="ob-field">
+              <span>추가 설명<small>선택</small></span>
+              <textarea rows={2} maxLength={300} value={obDesc} onChange={e => setObDesc(e.target.value)} placeholder="예: 갑작스러운 큰 소리에 쉽게 놀라요." />
+            </label>
+            <button type="submit" className="ob-primary" disabled={obBusy}>다음: 내 자리 고르기</button>
+            <button type="button" className="ob-back" onClick={() => { setObScreen(null); setObChar(true); }}>이전: 캐릭터 꾸미기</button>
+          </form>
+        </div>
+      )}
+      {obChar && (
+        <EditorView
+          from="onboard"
+          mode="editor"
+          me={me}
+          people={people}
+          floor={floor}
+          version={version}
+          onHost={onCharHost}
         />
       )}
     </div>

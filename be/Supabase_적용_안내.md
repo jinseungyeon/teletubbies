@@ -14,6 +14,7 @@
 | 004_screen_features.sql | 메시지 20자·독립 이모티콘·캐릭터·팀·알림 확장 | 001이 설치된 DB에 한 번 |
 | 005_avatar_catalog.sql | 실제 FE 캐릭터 항목 52개 등록 | 004 이후. 카탈로그 갱신은 재실행 가능 |
 | 006_seat_movement.sql | 임시 이동·복귀·자유 사유·통합 점유 보호 | 사용자 적용 및 설치 확인 완료. 재실행하지 않음 |
+| 007_reference_skin_tone.sql | 참조 캐릭터의 피부 톤(색) 저장·반환. 8번째 키 skinTone 허용 | 006 이후 한 번. 미적용이어도 FE는 기존 7개 키로 저장 |
 | tests/bootstrap.sql | 로컬 테스트용 Auth/Storage 모형 | Supabase에서는 실행 금지 |
 | tests/scenarios.sql | 가상 계정·회사로 수행하는 로컬 테스트 | Supabase에서는 실행 금지 |
 

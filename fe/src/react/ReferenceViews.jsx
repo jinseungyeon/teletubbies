@@ -118,7 +118,7 @@ export class MapView extends ReferenceView {
               {v.hasTeam && !v.selecting
                 ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
                 : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeDasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>}
-              {v.hasTeam && !v.selecting ? '영역 해제' : '팀 영역 설정'}
+              {v.hasTeam && !v.selecting ? '팀 영역 해제' : '팀 영역 설정'}
             </button>
             {v.inRoomView && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, height: 38, padding: '0 5px 0 12px', borderRadius: 11, background: '#2b2d55', color: '#fff', fontSize: 13, fontWeight: 700, boxShadow: '0 0 0 1.5px #3a3c63,0 4px 0 rgba(23,24,58,.35)', whiteSpace: 'nowrap' }}>

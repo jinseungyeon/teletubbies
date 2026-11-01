@@ -1,3 +1,5 @@
+"use client";
+
 import { useEffect, useRef } from "react";
 import Header from "./components/Header.jsx";
 import Hero from "./components/Hero.jsx";
@@ -7,7 +9,6 @@ import Process from "./components/Process.jsx";
 import Features from "./components/Features.jsx";
 import Why from "./components/Why.jsx";
 import OfficeBanner from "./components/OfficeBanner.jsx";
-import "./reference.css";
 const scrollTo = (id) =>
   document
     .getElementById(id)
@@ -27,7 +28,7 @@ export default function App() {
   }, []);
   const goContact = () => scrollTo("contact");
   const goLogin = () => {
-    const appUrl = import.meta.env.VITE_APP_URL;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL;
     if (appUrl && /^https?:\/\//.test(appUrl)) window.location.assign(appUrl);
     else loginDialog.current.showModal();
   };

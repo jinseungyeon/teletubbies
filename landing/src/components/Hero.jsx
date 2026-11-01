@@ -40,7 +40,7 @@ export default function Hero({ goContact, goFeatures }) {
         <path fill="#f5c542" d="M3 0h1v3h3v1H4v3H3V4H0V3h3z"></path>
       </svg>
       <span className="s16">B2B 메타버스 오피스 · 감각 공유 서비스</span>
-      <img src="assets/home/wordmark.png" alt="SENSPACE" className="s17" />
+      <img src="/assets/home/wordmark.png" alt="SENSPACE" className="s17" />
       <h1 className="hero-title">우리의 감각이 연결되는 사무실</h1>
       <p className="s19">
         실제 사무실 평면도 위에 동료들의 출근·자리 비움 상태와 소음·온도·냄새

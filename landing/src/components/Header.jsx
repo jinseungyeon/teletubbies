@@ -18,7 +18,7 @@ export default function Header({ goTop, goLogin, goContact }) {
           className="s3 brand-button"
         >
           <img
-            src="assets/home/wordmark.png"
+            src="/assets/home/wordmark.png"
             alt="SENSPACE 홈"
             className="s4"
           />

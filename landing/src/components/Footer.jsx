@@ -23,7 +23,7 @@ export default function Footer({ goContact, goLogin }) {
           <path fill="#f5c542" d="M3 0h1v3h3v1H4v3H3V4H0V3h3z"></path>
         </svg>
         <img
-          src="assets/home/wordmark-white.png"
+          src="/assets/home/wordmark-white.png"
           alt="SENSPACE"
           className="s157"
         />
@@ -38,7 +38,7 @@ export default function Footer({ goContact, goLogin }) {
         </div>
         <div className="s162">© 2026 Senspace · contact@senspace.io</div>
       </div>
-      <img src="assets/home/office-night.png" alt="" className="s163" />
+      <img src="/assets/home/office-night.png" alt="" className="s163" />
     </footer>
   );
 }

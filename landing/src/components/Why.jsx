@@ -20,7 +20,7 @@ export default function Why({}) {
         <div className="s30">
           <div className="s31">
             <span className="s32">
-              <img src="assets/icons/mute.png" className="s33" alt="" />
+              <img src="/assets/icons/mute.png" className="s33" alt="" />
               소음이 심해요
             </span>
             <b className="s34">말하기 어려운 불편함</b>
@@ -31,7 +31,7 @@ export default function Why({}) {
           </div>
           <div className="s31">
             <span className="s36">
-              <img src="assets/icons/away.png" className="s33" alt="" />
+              <img src="/assets/icons/away.png" className="s33" alt="" />
               자리에 계신가요?
             </span>
             <b className="s34">보이지 않는 동료의 상태</b>
@@ -42,7 +42,7 @@ export default function Why({}) {
           </div>
           <div className="s31">
             <span className="s32">
-              <img src="assets/icons/hot.png" className="s33" alt="" />
+              <img src="/assets/icons/hot.png" className="s33" alt="" />
               여기 좀 더워요
             </span>
             <b className="s34">공간마다 다른 컨디션</b>

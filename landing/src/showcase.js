@@ -1,58 +1,8 @@
-import "./sprites.js";
-const configs = {
-  minsu: {
-    hair: "part",
-    hairColor: "#8a5a3a",
-    outfit: "shirt",
-    top: "#9cc8f0",
-  },
-  haeun: { hair: "bun", hairColor: "#2e2a36", outfit: "suit", top: "#4a4e72" },
-  seoyeon: {
-    hair: "long",
-    hairColor: "#e8c27a",
-    outfit: "cardigan",
-    top: "#f0a6c8",
-    bottom: "skirt",
-  },
-  jihun: {
-    hair: "short",
-    hairColor: "#a9a6b8",
-    outfit: "suit",
-    top: "#3f4258",
-  },
-};
-configs.doyeon = {
-  hair: "twin",
-  hairColor: "#c0563f",
-  outfit: "hoodie",
-  top: "#f2c9a8",
-  bottom: "skirt",
-};
-configs.jiwoo = {
-  hair: "long",
-  hairColor: "#2e2a36",
-  outfit: "shirt",
-  top: "#d9484a",
-};
-configs.dain = { special: "bunny" };
-configs.minho = { special: "a_red" };
-configs.taehyun = {
-  hair: "short",
-  hairColor: "#2e2a36",
-  outfit: "hoodie",
-  top: "#3f4258",
-};
-configs.yuna = {
-  hair: "long",
-  hairColor: "#c0563f",
-  outfit: "cardigan",
-  top: "#f2c9a8",
-  bottom: "skirt",
-};
-const character = (key) => window.SP.char(configs[key]);
+const names = ["minsu", "haeun", "seoyeon", "jihun", "doyeon", "jiwoo", "dain", "minho", "taehyun", "yuna"];
+const character = key => `/assets/characters/${key}.png`;
 export const hm = {
   ...Object.fromEntries(
-    Object.keys(configs).map((key) => [key, character(key)]),
+    names.map((key) => [key, character(key)]),
   ),
   chars: [
     ["haeun", 812, 312],
@@ -79,7 +29,7 @@ export const hm = {
     [1320, 255, "rest", "조금 쉬어요", false],
     [1100, 637, "phone", "통화 중", false],
   ].map(([x, y, icon, text, alert]) => ({
-    icon: "assets/icons/" + icon + ".png",
+    icon: "/assets/icons/" + icon + ".png",
     text,
     style: {
       position: "absolute",

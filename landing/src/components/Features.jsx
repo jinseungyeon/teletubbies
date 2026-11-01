@@ -38,7 +38,7 @@ export default function Features({}) {
           </div>
           <div className="s47">
             <div className="s48">
-              <img src="assets/floor-2f.png" alt="2F 평면도" className="s49" />
+              <img src="/assets/floor-2f.png" alt="2F 평면도" className="s49" />
               {hm.chars.map((ch, index) => (
                 <React.Fragment key={ch.label ?? index}>
                   <div style={ch.style}>
@@ -76,7 +76,7 @@ export default function Features({}) {
                     <span className="s64">출근</span>
                   </span>
                   <span className="s65">
-                    <img src="assets/icons/mute.png" className="s66" alt="" />
+                    <img src="/assets/icons/mute.png" className="s66" alt="" />
                     지금 소리에 예민해요
                   </span>
                 </span>
@@ -92,7 +92,7 @@ export default function Features({}) {
                     <span className="s64">출근</span>
                   </span>
                   <span className="s68">
-                    <img src="assets/icons/focus.png" className="s66" alt="" />
+                    <img src="/assets/icons/focus.png" className="s66" alt="" />
                     집중하고 있어요
                   </span>
                 </span>
@@ -108,7 +108,7 @@ export default function Features({}) {
                     <span className="s69">식사</span>
                   </span>
                   <span className="s68">
-                    <img src="assets/icons/lunch.png" className="s66" alt="" />
+                    <img src="/assets/icons/lunch.png" className="s66" alt="" />
                     식사하러 갔어요
                   </span>
                 </span>
@@ -125,7 +125,7 @@ export default function Features({}) {
                   </span>
                   <span className="s68">
                     <img
-                      src="assets/icons/outside.png"
+                      src="/assets/icons/outside.png"
                       className="s66"
                       alt=""
                     />
@@ -146,7 +146,7 @@ export default function Features({}) {
               </div>
               <div className="s77">
                 <div className="s78">
-                  <img src="assets/icons/noise.png" className="s79" alt="" />
+                  <img src="/assets/icons/noise.png" className="s79" alt="" />
                   <span className="s80">소음</span>
                   <span className="s81">
                     <span className="s82"></span>
@@ -158,7 +158,7 @@ export default function Features({}) {
                   <span className="s83">매우 시끄러움</span>
                 </div>
                 <div className="s78">
-                  <img src="assets/icons/temp.png" className="s79" alt="" />
+                  <img src="/assets/icons/temp.png" className="s79" alt="" />
                   <span className="s80">온도</span>
                   <span className="s81">
                     <span className="s84"></span>
@@ -170,7 +170,7 @@ export default function Features({}) {
                   <span className="s86">적당</span>
                 </div>
                 <div className="s78">
-                  <img src="assets/icons/humid.png" className="s79" alt="" />
+                  <img src="/assets/icons/humid.png" className="s79" alt="" />
                   <span className="s80">습도</span>
                   <span className="s81">
                     <span className="s87"></span>
@@ -182,7 +182,7 @@ export default function Features({}) {
                   <span className="s86">건조</span>
                 </div>
                 <div className="s78">
-                  <img src="assets/icons/smell.png" className="s79" alt="" />
+                  <img src="/assets/icons/smell.png" className="s79" alt="" />
                   <span className="s80">냄새</span>
                   <span className="s81">
                     <span className="s88"></span>
@@ -250,28 +250,28 @@ export default function Features({}) {
           <div className="s90">
             <div className="s91">
               <span className="s92">
-                <img src="assets/icons/ear.png" className="s66" alt="" />
+                <img src="/assets/icons/ear.png" className="s66" alt="" />
                 청각
               </span>
               <span className="s93">
-                <img src="assets/icons/nose.png" className="s66" alt="" />
+                <img src="/assets/icons/nose.png" className="s66" alt="" />
                 후각
               </span>
               <span className="s93">
-                <img src="assets/icons/temp.png" className="s66" alt="" />
+                <img src="/assets/icons/temp.png" className="s66" alt="" />
                 온도
               </span>
               <span className="s93">
-                <img src="assets/icons/humid.png" className="s66" alt="" />
+                <img src="/assets/icons/humid.png" className="s66" alt="" />
                 습도
               </span>
               <span className="s93">
-                <img src="assets/icons/crowd.png" className="s66" alt="" />
+                <img src="/assets/icons/crowd.png" className="s66" alt="" />
                 혼잡도
               </span>
             </div>
             <div className="s94">
-              <img src="assets/floor-2f.png" alt="" className="s49" />
+              <img src="/assets/floor-2f.png" alt="" className="s49" />
               <div className="s95"></div>
               <div className="s96"></div>
               <div className="s97"></div>

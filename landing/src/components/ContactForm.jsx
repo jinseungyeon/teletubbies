@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { inquiryMailto, validateInquiry } from "../inquiry.js";
-const endpoint = import.meta.env.VITE_CONTACT_ENDPOINT;
+const endpoint = process.env.NEXT_PUBLIC_CONTACT_ENDPOINT;
 export default function ContactForm() {
   const [file, setFile] = useState(null);
   const [status, setStatus] = useState("");

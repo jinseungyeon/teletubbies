@@ -57,14 +57,13 @@ const ROOM_REASON_LABEL = { '1-meet': '미팅', '1-pantry': '점심' };
 // 보이도록 사람 id에서 위치를 계산한다.
 const ROOM_BY_REASON = {};
 Object.keys(ROOM_REASON).forEach(id => { ROOM_BY_REASON[ROOM_REASON[id]] = id; });
-const roomSpot = (p, rm) => {
-  const key = String(p.sourceId || p.id);
-  let h = 2166136261;
-  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-  const rnd = n => { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return h % n; };
-  const x = rm.x + 22 + rnd(Math.max(1, rm.w - 58));
-  const y = rm.y + 34 + rnd(Math.max(1, rm.h - 94));
-  return { id: p.seat, side: 'n', x, y, z: y + 120 };
+// 공간 안 자리는 공간이 정의한 격자(cols·dx·dy)를 순서대로 채운다.
+// 무작위 위치를 쓰면 두 사람이 같은 자리에 겹치거나 가구 뒤로 숨어 보이지 않는다.
+const roomSpot = (p, rm, i = 0) => {
+  const cols = Math.max(1, Math.min(rm.cols || 1, rm.cap || 1));
+  const x = rm.x + 22 + (i % cols) * (rm.dx || 48);
+  const y = rm.y + 54 + Math.floor(i / cols) * (rm.dy || 64);
+  return { id: p.seat, side: 'n', x, y, z: 900 + y };
 };
 // "탕비실로 이동" / "회의 공간으로 이동" — 받침에 맞춰 조사를 붙인다.
 const ROOM_GO = rm => {
@@ -284,6 +283,22 @@ class Component extends DCLogic {
 
     // people placement
     const seatMap = {}; SEATS.forEach(se => { seatMap[se.id] = se; });
+    // 같은 공간에 있는 사람은 id 순서대로 격자 칸을 하나씩 받는다.
+    const roomSlots = (() => {
+      const byRoom = {}, index = {};
+      s.people.forEach(p => {
+        const rid = p.status === 'away' ? ROOM_BY_REASON[p.reason] : null;
+        if (rid && ROOM[rid]) (byRoom[rid] = byRoom[rid] || []).push(p);
+      });
+      Object.keys(byRoom).forEach(rid => {
+        byRoom[rid].sort((a, b) => String(a.sourceId || a.id).localeCompare(String(b.sourceId || b.id)));
+        byRoom[rid].forEach((p, i) => { index[rid + '|' + (p.sourceId || p.id)] = i; });
+      });
+      return p => {
+        const rid = p.status === 'away' ? ROOM_BY_REASON[p.reason] : null;
+        return (rid && index[rid + '|' + (p.sourceId || p.id)]) || 0;
+      };
+    })();
     const placed = s.people.filter(p=>!EMBEDDED||p.floor===SESSION.floor).flatMap(p => {
       // 자리 고르는 중에는 초안 좌석에 그린다.
       if (p.id === 'me' && s.pickSeat) {
@@ -296,7 +311,7 @@ class Component extends DCLogic {
       if (awayRoom && ROOM[awayRoom] && ROOM[awayRoom].floor === (p.floor || 1)) {
         const home = seatMap[p.seat], out = [];
         if (home && home.floor === (p.floor || 1)) out.push({ p, se: home, present: false, room: SEAT_ROOM[home.id], ghost: true, goneTo: awayRoom });
-        out.push({ p, se: roomSpot(p, ROOM[awayRoom]), present: true, room: awayRoom, inRoom: true });
+        out.push({ p, se: roomSpot(p, ROOM[awayRoom], roomSlots(p)), present: true, room: awayRoom, inRoom: true });
         return out;
       }
       const se = seatMap[p.seat];

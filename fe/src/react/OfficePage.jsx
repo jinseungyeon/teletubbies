@@ -294,7 +294,7 @@ export default function OfficePage({ api, me, people, version, refresh, toast, n
           <span style={{ display: 'flex', gap: 2, background: '#efe6d5', borderRadius: 9, padding: 2 }}>
             {FLOOR_TABS().map(f => (
               <button key={f} type="button" onClick={() => { setFloor(f); setMenuOpen(false); }} aria-pressed={floor === f}
-                style={{ height: 28, minWidth: 40, padding: '0 10px', border: 'none', borderRadius: 7, cursor: 'pointer', font: '12px Galmuri11', background: floor === f ? '#2b2d55' : 'transparent', color: floor === f ? '#fff' : '#6e6a84', boxShadow: floor === f ? 'inset 0 -2px 0 #17183a' : 'none' }}>
+                style={{ height: 26, minWidth: 40, padding: '0 10px', border: 'none', borderRadius: 7, cursor: 'pointer', font: '12px Galmuri11', background: floor === f ? '#2b2d55' : 'transparent', color: floor === f ? '#fff' : '#6e6a84', boxShadow: floor === f ? 'inset 0 -2px 0 #17183a' : 'none' }}>
                 {floorLabel(f).short}
               </button>
             ))}

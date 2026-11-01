@@ -271,7 +271,7 @@ class Component extends DCLogic {
     const z = z0 * (s.selecting ? 1 : s.zm);
     const cx = base.x + base.w / 2 + (s.selecting ? 0 : s.panX), cy = base.y + base.h / 2 + (s.selecting ? 0 : s.panY);
     const tx = vw / 2 - cx * z, ty = vh / 2 - cy * z;
-    const showText = view === 'team' || s.zm >= 1.45;
+    const showText = s.zm >= 1.45 || (view === 'team' && s.zm >= 1);
     const k = 1 / z;
     const toMap = e => { const r = this.mapRef.current.getBoundingClientRect(); return { x: Math.max(0,Math.min(MW,(e.clientX - r.left - tx) / z)), y: Math.max(0,Math.min(MH,(e.clientY - r.top - ty) / z)) }; };
 
@@ -310,7 +310,7 @@ class Component extends DCLogic {
     const bubbles = s.pickSeat ? [] : placed.filter(o => !o.inRoom && ((o.present && o.p.msg)||o.p.status==='away')).map(o => {
       const away=o.p.status==='away',reason=REASONS[o.p.reason||'short'];const gone=o.goneTo&&ROOM[o.goneTo]?ROOM_GO(ROOM[o.goneTo]):null;const bubbleText=away?(gone||o.p.awayNote||(o.p.reason?reason.label:'')):o.p.msg;const al = !away&&o.p.alert, isMe = o.p.id === 'me';
       const bg = al ? '#fff0f1' : '#fffdf8', bd = al ? '#f1b3ba' : isMe ? '#5d6594' : '#ded1bb', fg = al ? '#cf3646' : '#2e2a44';
-      const showGone = showText || !!gone;
+      const showGone = showText;
       const lift = showGone && Math.round((o.se.x - 10) / 56) % 2 ? 22 : 0;
       const bx = Math.max(84, Math.min(MW - 84, o.se.x + 18));
       return { icon:IC(away?'away':(o.p.msgIcon||'message')),text:bubbleText, showText: showGone, wide: !!gone, onClick: e => { if (e && e.stopPropagation) e.stopPropagation(); if (!s.pickSeat) set({ pop: s.pop === o.p.id ? null : o.p.id }); },

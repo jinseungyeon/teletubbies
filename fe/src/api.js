@@ -216,16 +216,6 @@ function mapCard(card) {
 function createSupabaseAdapter() {
   let cached = null;
   let pending = null;
-  // 007_reference_skin_tone.sql 적용 여부. DB가 피부 톤 카탈로그를 갖고 있을 때만 보낸다.
-  let toneReady = null;
-
-  async function hasSkinTone() {
-    if (toneReady !== null) return toneReady;
-    const { data, error } = await supabase.from('avatar_items')
-      .select('item_id').eq('category_id', 'skin_tone').limit(1);
-    toneReady = !error && Array.isArray(data) && data.length > 0;
-    return toneReady;
-  }
 
   async function currentUser() {
     const { data, error } = await supabase.auth.getSession();
@@ -483,10 +473,17 @@ function createSupabaseAdapter() {
 
     async referenceCharacter(cfg) {
       const ctx = await memberContext();
-      const { error } = await supabase.rpc('save_character', {
+      const save = character => supabase.rpc('save_character', {
         p_employee_id: ctx.membership.employee_id,
-        p_character: toNativeCharacter(cfg, await hasSkinTone()),
+        p_character: character,
       });
+      // 피부 톤을 먼저 보낸다. 카탈로그 조회가 막혀 있어도 톤은 저장되고,
+      // 007 이전 DB가 8번째 키를 거부할 때만 톤 없이 한 번 더 저장한다.
+      const toned = toNativeCharacter(cfg, true);
+      let { error } = await save(toned);
+      if (error && toned.skinTone) {
+        ({ error } = await save(toNativeCharacter(cfg, false)));
+      }
       if (error) throw new Error(businessMessage(error));
       return api.me();
     },

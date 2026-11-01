@@ -543,7 +543,8 @@ class Component extends DCLogic {
       openSettings: () => this.openSettings(), notifOn: n.master,
       mapRef: this.mapRef, stop,
       vpStyle: { flex: 1, minWidth: 0, position: 'relative', borderRadius: 18, overflow: 'hidden', backgroundColor: '#262848', backgroundImage: 'radial-gradient(#33366a 1.5px,transparent 1.5px)', backgroundSize: '24px 24px', touchAction: 'none', cursor: this._drag ? 'grabbing' : 'grab', userSelect: 'none' },
-      layerStyle: { position: 'absolute', left: 0, top: 0, width: MW, height: MH, transform: `translate(${tx}px,${ty}px) scale(${z})`, transformOrigin: '0 0' },
+      // 줌은 무게감 있게 미끄러지듯, 드래그 중에는 손끝을 그대로 따라오게 한다.
+      layerStyle: { position: 'absolute', left: 0, top: 0, width: MW, height: MH, transform: `translate(${tx}px,${ty}px) scale(${z})`, transformOrigin: '0 0', transition: this._drag ? 'none' : 'transform .34s cubic-bezier(.22,.68,.36,1)' },
       vpDown: e => { if (s.selecting) return; this._drag = { x: e.clientX, y: e.clientY, px: s.panX, py: s.panY, moved: false }; e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId); },
       vpMove: e => { const d = this._drag; if (!d) return; const dx = e.clientX - d.x, dy = e.clientY - d.y; if (Math.abs(dx) + Math.abs(dy) > 4) d.moved = true; if (d.moved) set({ panX: d.px - dx / z, panY: d.py - dy / z }); },
       vpUp: () => { const d = this._drag; this._drag = null; if (d && !d.moved) set({ pop: null }); else this.forceUpdate(); },

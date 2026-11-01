@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { PixelS } from './Shared.jsx';
 
 // Accepts a full invite URL (…/enter/<token>, …?t=<token>) or a bare token.
 function parseToken(value) {
@@ -40,7 +39,7 @@ export default function EntryPage({ error, onEnter, onDemo }) {
   return (
     <main className="entry-page">
       <section className="entry-card">
-        <span className="entry-brand"><PixelS size={26} /><b>SENSPACE</b></span>
+        <span className="entry-brand"><img src="/assets/home/wordmark.png" alt="SENSPACE" /></span>
         <span className="entry-tag">개인 초대 링크 입장</span>
         <h1>초대 링크로<br />입장해 주세요</h1>
         <p>회사에서 받은 개인 링크를 열면 내 계정으로 바로 들어갈 수 있어요. 링크는 다른 사람과 공유하지 마세요.</p>

@@ -32,8 +32,7 @@ export function PixelS({ size = 22 }) {
 export function Brand({ onNavigate }) {
   return (
     <a href="/office" className="brand" onClick={e => { e.preventDefault(); onNavigate('/office'); }} aria-label="SENSPACE">
-      <span className="brand-mark"><span className="brand-s">S</span><span className="brand-star">✦</span></span>
-      <span className="brand-word">SENSPACE</span>
+      <img className="brand-logo" src="/assets/home/wordmark.png" alt="SENSPACE" />
     </a>
   );
 }

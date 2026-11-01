@@ -1,9 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { QUICK_STATUS } from '../data.js';
+import { isDemoMode } from '../api.js';
 
 // AI 비서 "센비". 대화로 상태·메시지·알림·예약을 바꾼다.
-// 지금은 LLM이 연결되지 않아 askLLM()이 null을 돌려주고, 로컬 파서가 대신 답한다.
-// LLM을 연결할 때는 askLLM()만 실제 API 호출로 바꾸면 된다.
+// 실제 로그인에서는 sensory-assistant Edge Function(LLM)이 초안을 만들고,
+// 사용자가 [예약]을 눌렀을 때만 서버가 등록한다. 데모 모드는 로컬 파서로 안내한다.
 
 // 상태 키 -> FE 근태 상태(api.status) 매핑
 const STO = {
@@ -39,6 +40,59 @@ const taskSummary = t => [
   t.message ? '상태 메시지 "' + t.message + '"' : null,
   t.notif ? '알림 ' + Object.keys(t.notif).map(g => NG[g].label + ' ' + (t.notif[g] ? '켬' : '끔')).join(', ') : null,
 ].filter(Boolean).join(' · ');
+
+// 서버(Edge Function)가 돌려준 초안·예약 표시용.
+const REASON_LABEL = { lunch: '점심', meeting: '회의', outside: '외출' };
+const EMOJI_LABEL = Object.fromEntries(QUICK_STATUS.map(([id, text]) => [id, text]));
+const RES_STATE = {
+  queued: ['실행 대기', '#3a4170', '#dbddea'],
+  running: ['실행 중', '#2f8a52', '#e3f3e8'],
+  completed: ['완료', '#2f8a52', '#e3f3e8'],
+  completed_conflict: ['일부만 복원', '#b8701a', '#fdf0da'],
+  failed: ['실패', '#a33b3b', '#fbe6e6'],
+  cancelled: ['취소됨', '#8a8499', '#ecebf1'],
+  expired: ['만료', '#8a8499', '#ecebf1'],
+};
+const kstDate = iso => new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', month: 'long', day: 'numeric', weekday: 'short' }).format(new Date(iso));
+const kstTime = iso => new Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul', hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso));
+const proposalWhen = p => `${kstDate(p.starts_at)} ${kstTime(p.starts_at)}~${kstTime(p.ends_at)}`;
+const reservationWhen = r => `${kstDate(r.starts_at)} ${kstTime(r.starts_at)}~${kstTime(r.ends_at)}`;
+const attendanceText = a => {
+  if (!a) return '';
+  if (a.status === 'working') return '업무 중';
+  const detail = a.away_reason ? REASON_LABEL[a.away_reason] : a.away_reason_text || '';
+  return '자리비움' + (detail ? ' · ' + detail : '');
+};
+const changeLines = changes => {
+  const c = changes || {};
+  const out = [];
+  if (c.attendance) out.push('업무 상태: ' + attendanceText(c.attendance));
+  if ('status_message' in c) out.push(c.status_message ? `상태 메시지: “${c.status_message}”` : '상태 메시지 지우기');
+  if ('quick_emoji_id' in c) out.push(c.quick_emoji_id ? '빠른 이모티콘: ' + (EMOJI_LABEL[c.quick_emoji_id] || c.quick_emoji_id) : '빠른 이모티콘 선택 해제');
+  if (c.notifications) out.push('본인 좌석 배정 변경 알림 ' + (c.notifications.seat_changed_enabled ? '켜기' : '끄기'));
+  return out;
+};
+const restoreText = restore => (restore === 'keep' ? '종료 후 변경한 설정 유지' : '종료 후 변경 전 설정으로 복원');
+const reservationLabel = r => {
+  if (!r) return '실행 대기 중';
+  const base = (RES_STATE[r.state] || ['알 수 없음'])[0];
+  if (r.state === 'completed' && r.result?.mode === 'keep') return base + ' · 변경 유지';
+  return base;
+};
+// 서버 응답(초안/질문)을 메시지에 붙일 형태로 정리한다.
+const serverMessage = res => {
+  const draft = res.draft || {};
+  if (res.kind === 'clarification') {
+    return {
+      text: draft.reply || '추가 정보를 확인해 주세요. 아직 예약되지 않았어요.',
+      server: { draftId: draft.id, version: draft.version, draft, token: null, state: 'clarification', questions: draft.questions || [], reservation: null, pendingKey: null },
+    };
+  }
+  return {
+    text: draft.reply || '다음 내용으로 예약할까요? 아직 예약되지 않았어요.',
+    server: { draftId: draft.id, version: draft.version, draft, token: res.confirmation_token || null, state: 'preview', questions: [], reservation: null, pendingKey: null },
+  };
+};
 
 function readNotif() {
   try {
@@ -128,16 +182,22 @@ const answerLocal = (t, people) => {
 
 export function useAssistant({ me, people, api, refresh, toast, onNotifChange }) {
   const [state, setState] = useState({ tab: 'chat', msgs: [], input: '', busy: false, unread: false, tasks: [] });
+  const [demo] = useState(() => isDemoMode());
+  const [remoteTasks, setRemoteTasks] = useState([]);
+  const [remoteLoading, setRemoteLoading] = useState(false);
   const sref = useRef(state);
   sref.current = state;
   const busyRef = useRef(false);
+  const confirmingRef = useRef(new Set());
   const runningRef = useRef(new Set());
+  // 아직 예약되지 않은 질문형 초안. 다음 채팅 입력은 새 interpret 대신 revise로 보낸다.
+  const draftRef = useRef(null);
   const ctx = useRef({ me, people, api, refresh, toast, onNotifChange });
   ctx.current = { me, people, api, refresh, toast, onNotifChange };
 
   const setAI = patch => setState(st => ({ ...st, ...(typeof patch === 'function' ? patch(st) : patch) }));
   const setInput = value => setAI({ input: value });
-  const setTab = tab => setAI({ tab });
+  const setTab = tab => { setAI({ tab }); if (tab === 'tasks') refreshReservations(); };
   const markRead = () => { if (sref.current.unread) setAI({ unread: false }); };
 
   const pushBot = useCallback((text, plan) => {
@@ -149,34 +209,163 @@ export function useAssistant({ me, people, api, refresh, toast, onNotifChange })
     ...st,
     msgs: st.msgs.map(m => (m.id === id ? { ...m, plan: { ...m.plan, ...patch } } : m)),
   }));
+  const updServer = (id, patch) => setState(st => ({
+    ...st,
+    msgs: st.msgs.map(m => (m.id === id && m.server ? { ...m, server: { ...m.server, ...patch } } : m)),
+  }));
   const updTask = (id, patch) => setState(st => ({ ...st, tasks: st.tasks.map(t => (t.id === id ? { ...t, ...patch } : t)) }));
 
-  // LLM 연결 지점. 지금은 연결이 없어 항상 null을 돌려주고 parseLocal이 대신 답한다.
-  const askLLM = useCallback(async () => {
-    const bridge = window.claude;
-    if (!bridge || typeof bridge.complete !== 'function') return null;
-    return null;
-  }, []);
+  const refreshReservations = useCallback(async () => {
+    if (demo) return;
+    setRemoteLoading(true);
+    try {
+      const res = await ctx.current.api.assistant({ action: 'list_reservations' });
+      if (res && Array.isArray(res.reservations)) setRemoteTasks(res.reservations);
+    } catch (error) {
+      // 목록 조회 실패는 대화·예약 자체를 막지 않는다.
+    } finally {
+      setRemoteLoading(false);
+    }
+  }, [demo]);
+
+  useEffect(() => { refreshReservations(); }, [refreshReservations]);
 
   const send = useCallback(async text => {
     const t = String(text || '').trim();
     if (!t || busyRef.current) return;
     busyRef.current = true;
-    const hist = sref.current.msgs.slice(-6);
     setState(st => ({ ...st, msgs: st.msgs.concat({ id: 'u' + Date.now(), role: 'user', text: t }), input: '', busy: true, tab: 'chat' }));
-    let res = null;
-    try { res = await askLLM(t, hist); } catch (error) { res = null; }
-    if (!res || typeof res !== 'object') res = answerLocal(t, ctx.current.people) || parseLocal(t);
-    const plan = normPlan(res.plan);
-    const m = {
-      id: 'b' + Date.now(),
-      role: 'bot',
-      text: String(res.reply || (plan ? '알겠습니다. 아래와 같이 설정할까요?' : '조금 더 자세히 말씀해 주시겠어요?')),
-      plan: plan ? { ...plan, state: 'proposed', editing: false } : null,
-    };
-    setState(st => ({ ...st, busy: false, msgs: st.msgs.concat(m), unread: true }));
-    busyRef.current = false;
-  }, [askLLM]);
+    try {
+      // 사무실 데이터로 바로 답할 수 있는 질문은 LLM을 거치지 않는다.
+      const localAnswer = answerLocal(t, ctx.current.people);
+      if (localAnswer) { pushBot(localAnswer.reply); return; }
+      if (!demo) {
+        const pending = draftRef.current;
+        const res = await ctx.current.api.assistant(pending
+          ? { action: 'revise', draft_id: pending.id, version: pending.version, text: t }
+          : { action: 'interpret', text: t });
+        if (res && (res.kind === 'clarification' || res.kind === 'preview')) {
+          const next = serverMessage(res);
+          draftRef.current = next.server.state === 'clarification' && next.server.draftId
+            ? { id: next.server.draftId, version: next.server.version } : null;
+          setState(st => ({ ...st, msgs: st.msgs.concat({ id: 'b' + Date.now(), role: 'bot', text: next.text, server: next.server }), unread: true }));
+          return;
+        }
+        // 응답을 해석하지 못한 경우 예약 성공으로 표시하지 않는다.
+        pushBot('비서 응답을 받지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+        return;
+      }
+      // 데모 모드: 서버 세션이 없으므로 로컬 파서가 안내한다.
+      const res = parseLocal(t);
+      const plan = normPlan(res.plan);
+      draftRef.current = null;
+      const m = {
+        id: 'b' + Date.now(),
+        role: 'bot',
+        text: String(res.reply || (plan ? '알겠습니다. 아래와 같이 설정할까요?' : '조금 더 자세히 말씀해 주시겠어요?')),
+        plan: plan ? { ...plan, state: 'proposed', editing: false } : null,
+      };
+      setState(st => ({ ...st, msgs: st.msgs.concat(m), unread: true }));
+    } catch (error) {
+      // 수정 중 LLM 오류가 나면 DB 버전만 먼저 올라갔을 수 있다.
+      if (error.draftId && error.version) draftRef.current = { id: error.draftId, version: error.version };
+      pushBot(error.message || '비서 요청을 처리하지 못했어요. 잠시 뒤 다시 시도해 주세요.');
+    } finally {
+      busyRef.current = false;
+      setState(st => ({ ...st, busy: false }));
+    }
+  }, [pushBot, demo]);
+
+  // [예약] 버튼을 눌렀을 때만 confirm을 보낸다. 같은 확인의 재시도는 같은 멱등키를 쓴다.
+  const confirmServer = useCallback(async id => {
+    const m = sref.current.msgs.find(x => x.id === id);
+    if (!m || !m.server || m.server.state !== 'preview' || !m.server.token || confirmingRef.current.has(id) || busyRef.current) return;
+    confirmingRef.current.add(id);
+    const s = m.server;
+    const key = s.pendingKey || crypto.randomUUID();
+    updServer(id, { state: 'busy', pendingKey: key });
+    try {
+      const res = await ctx.current.api.assistant({
+        action: 'confirm', draft_id: s.draftId, version: s.version,
+        confirmation_token: s.token, idempotency_key: key, confirmed: true,
+      });
+      draftRef.current = null;
+      updServer(id, { state: 'reserved', reservation: res?.reservation || null, pendingKey: null });
+      ctx.current.toast('예약했어요.');
+      pushBot('예약했어요. 아직 상태는 바뀌지 않았고, 예약된 시각에 서버가 실행해요. 예약 작업 탭에서 상태를 확인할 수 있어요.');
+      refreshReservations();
+    } catch (error) {
+      if (error.code === 'NETWORK' || error.code === 'UPSTREAM_UNAVAILABLE') {
+        // 같은 초안·토큰·멱등키로 다시 확인하면 중복 예약을 만들지 않는다.
+        updServer(id, { state: 'preview' });
+        ctx.current.toast(error.message);
+      } else if (error.code === 'ASSISTANT_VERSION_CONFLICT' || error.code === 'ASSISTANT_DRAFT_EXPIRED') {
+        draftRef.current = null;
+        updServer(id, { state: 'stale', token: null, error: error.message + ' 채팅에 같은 요청을 다시 입력해 주세요.' });
+        pushBot(error.message);
+      } else {
+        updServer(id, { state: 'preview' });
+        ctx.current.toast(error.message);
+      }
+    } finally {
+      confirmingRef.current.delete(id);
+    }
+  }, [pushBot, refreshReservations]);
+
+  // [수정]: 자연어로 revise를 요청하고 같은 카드의 초안을 갱신한다.
+  const reviseServer = useCallback(async (id, text) => {
+    const t = String(text || '').trim();
+    const m = sref.current.msgs.find(x => x.id === id);
+    if (!t || !m || !m.server || busyRef.current) return;
+    busyRef.current = true;
+    const s = m.server;
+    setState(st => ({ ...st, busy: true, msgs: st.msgs.concat({ id: 'u' + Date.now(), role: 'user', text: t }) }));
+    updServer(id, { state: 'busy' });
+    try {
+      const res = await ctx.current.api.assistant({ action: 'revise', draft_id: s.draftId, version: s.version, text: t });
+      const next = serverMessage(res);
+      draftRef.current = next.server.state === 'clarification' && next.server.draftId
+        ? { id: next.server.draftId, version: next.server.version } : null;
+      setState(st => ({ ...st, msgs: st.msgs.map(x => (x.id === id ? { ...x, text: next.text, server: next.server } : x)) }));
+    } catch (error) {
+      if (error.draftId && error.version && error.version !== s.version) {
+        // 버전이 올라가면 이전 확인 토큰은 쓸 수 없다.
+        draftRef.current = null;
+        updServer(id, { state: 'stale', version: error.version, token: null, error: error.message + ' 채팅에 같은 요청을 다시 입력해 주세요.' });
+      } else {
+        updServer(id, { state: s.state === 'clarification' ? 'clarification' : 'preview' });
+      }
+      ctx.current.toast(error.message);
+    } finally {
+      busyRef.current = false;
+      setState(st => ({ ...st, busy: false }));
+    }
+  }, []);
+
+  const cancelServer = useCallback(async id => {
+    const m = sref.current.msgs.find(x => x.id === id);
+    if (!m || !m.server || m.server.state === 'busy' || busyRef.current) return;
+    const s = m.server;
+    if (!s.draftId) { updServer(id, { state: 'cancelled' }); return; }
+    try {
+      await ctx.current.api.assistant({ action: 'cancel_draft', draft_id: s.draftId, version: s.version });
+      draftRef.current = null;
+      updServer(id, { state: 'cancelled', token: null });
+      pushBot('취소했어요. 다른 도움이 필요하면 말씀해 주세요.');
+    } catch (error) {
+      ctx.current.toast(error.message);
+    }
+  }, [pushBot]);
+
+  const cancelReservation = useCallback(async reservationId => {
+    try {
+      await ctx.current.api.assistant({ action: 'cancel_reservation', reservation_id: reservationId });
+      ctx.current.toast('예약 취소를 요청했어요.');
+      refreshReservations();
+    } catch (error) {
+      ctx.current.toast(error.message);
+    }
+  }, [refreshReservations]);
 
   const bookPlan = useCallback(id => {
     const m = sref.current.msgs.find(x => x.id === id);
@@ -272,6 +461,9 @@ export function useAssistant({ me, people, api, refresh, toast, onNotifChange })
 
   return {
     ...state,
+    demo,
+    remoteTasks,
+    remoteLoading,
     taskCount: state.tasks.filter(t => t.phase !== 'done').length,
     setInput,
     setTab,
@@ -283,6 +475,11 @@ export function useAssistant({ me, people, api, refresh, toast, onNotifChange })
     runTask,
     stopTask,
     delTask,
+    confirmServer,
+    reviseServer,
+    cancelServer,
+    cancelReservation,
+    refreshReservations,
   };
 }
 
@@ -405,6 +602,105 @@ function PlanCard({ plan, onPatch, onBook, onCancel }) {
   );
 }
 
+const btnBase = { height: 34, padding: '0 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer' };
+const BTN_PRIMARY = { ...btnBase, border: 'none', background: '#2b2d55', color: '#fff', boxShadow: 'inset 0 -3px 0 #17183a' };
+const BTN_SECOND = { ...btnBase, border: '1.5px solid #e2d6c2', background: '#fff', color: '#2b2d55', boxShadow: 'inset 0 -2px 0 #efe6d5' };
+const BTN_GHOST = { ...btnBase, border: '1.5px solid #e2d6c2', background: '#fff', color: '#8a8499', boxShadow: 'inset 0 -2px 0 #efe6d5' };
+
+// 서버가 만든 초안 카드. [예약]을 눌렀을 때만 confirm을 보내고,
+// [수정]은 자연어 revise로 같은 초안의 새 버전을 받는다.
+function ServerPlanCard({ server, onConfirm, onRevise, onCancel }) {
+  const [editing, setEditing] = useState(false);
+  const [text, setText] = useState('');
+  const p = server.draft?.proposal;
+  const live = server.state === 'preview';
+  const busy = server.state === 'busy';
+  const lines = p ? changeLines(p.changes) : [];
+  const sendRevise = () => {
+    const value = text.trim();
+    if (!value) return;
+    onRevise(value);
+    setText('');
+    setEditing(false);
+  };
+  return (
+    <div style={{ background: '#fff', border: '1.5px solid #e2d6c2', borderRadius: 14, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10, boxShadow: '0 2px 0 #ece2cf' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 13.5, fontWeight: 800, color: '#2b2d55' }}>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+        {p ? proposalWhen(p) + ' 예약 작업' : '추가 정보가 필요해요'}
+      </div>
+      {server.state === 'clarification' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: 13.5, lineHeight: 1.5 }}>
+          {(server.questions || []).map((q, i) => (
+            <div key={i} style={{ display: 'flex', gap: 7 }}>
+              <b style={{ color: '#b8701a' }}>?</b><span>{q}</span>
+            </div>
+          ))}
+          <div style={{ fontSize: 12, color: '#8a8499' }}>아래 채팅에 답변을 입력해 주세요. 아직 예약되지 않았어요.</div>
+        </div>
+      )}
+      {p && (
+        <>
+          {lines.map((line, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, flexWrap: 'wrap' }}>
+              <span style={{ color: '#a39c8e' }}>·</span><span>{line}</span>
+            </div>
+          ))}
+          <div style={{ fontSize: 12, color: '#8a8499' }}>{restoreText(p.restore)}</div>
+        </>
+      )}
+      {editing && live && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <input
+            value={text}
+            onChange={e => setText(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) { e.preventDefault(); sendRevise(); } }}
+            placeholder="예: 3시로 바꾸고 알림도 켜줘"
+            maxLength={2000}
+            style={inputStyle}
+          />
+          <button onClick={sendRevise} style={{ ...BTN_PRIMARY, flexShrink: 0 }}>보내기</button>
+          <button onClick={() => { setEditing(false); setText(''); }} style={{ ...BTN_GHOST, flexShrink: 0, padding: '0 10px' }}>닫기</button>
+        </div>
+      )}
+      {live && !editing && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
+          <button onClick={onConfirm} style={BTN_PRIMARY}>예약</button>
+          <button onClick={() => setEditing(true)} style={BTN_SECOND}>수정</button>
+          <button onClick={onCancel} style={BTN_GHOST}>취소</button>
+        </div>
+      )}
+      {live && !server.token && <div style={{ fontSize: 12, color: '#b8701a' }}>확인 정보가 없어 예약할 수 없어요. [수정]에서 다시 요청해 주세요.</div>}
+      {busy && <div style={{ fontSize: 12.5, fontWeight: 700, color: '#5d6594', background: '#eef0f7', padding: '7px 10px', borderRadius: 9 }}>처리 중이에요…</div>}
+      {server.state === 'reserved' && <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12.5, fontWeight: 800, color: '#2f8a52', background: '#e3f3e8', padding: '7px 10px', borderRadius: 9 }}>✓ 예약됨 · {reservationLabel(server.reservation)}</div>}
+      {server.state === 'cancelled' && <div style={{ fontSize: 12.5, fontWeight: 700, color: '#8a8499', background: '#ecebf1', padding: '7px 10px', borderRadius: 9 }}>취소된 제안이에요</div>}
+      {server.state === 'stale' && <div style={{ fontSize: 12.5, fontWeight: 700, color: '#b8701a', background: '#fdf0da', padding: '7px 10px', borderRadius: 9 }}>{server.error || '초안이 만료됐어요. 다시 요청해 주세요.'}</div>}
+    </div>
+  );
+}
+
+function RemoteTaskCard({ item, onCancel }) {
+  const ph = RES_STATE[item.state] || ['알 수 없음', '#8a8499', '#ecebf1'];
+  const lines = changeLines(item.proposal?.changes);
+  const active = item.state === 'queued' || item.state === 'running';
+  return (
+    <div style={{ background: '#fff', border: '1px solid #ece2cf', borderRadius: 14, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 8, boxShadow: '0 2px 0 #ece2cf' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2b2d55" strokeWidth="2.4" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>
+        <b style={{ fontSize: 14, flex: 1 }}>{reservationWhen(item)}</b>
+        <span style={{ fontSize: 11.5, fontWeight: 800, color: ph[1], background: ph[2], padding: '3px 8px', borderRadius: 6, whiteSpace: 'nowrap' }}>{ph[0]}</span>
+      </div>
+      <div style={{ fontSize: 13, lineHeight: 1.55, color: '#5d5870' }}>{lines.length ? lines.join(' · ') : '변경 항목을 불러오지 못했어요.'}</div>
+      {item.proposal && <div style={{ fontSize: 12, color: '#8a8499' }}>{restoreText(item.proposal.restore)}</div>}
+      {item.cancel_requested && item.state === 'running' && <div style={{ fontSize: 12, color: '#b8701a' }}>취소 요청됨 · 다음 실행에서 승인한 종료 규칙을 처리해요</div>}
+      {item.error_code && <div style={{ fontSize: 12, color: '#a33b3b' }}>오류: {item.error_code}</div>}
+      {active && !item.cancel_requested && (
+        <div><button onClick={() => onCancel(item.id)} style={{ height: 30, padding: '0 12px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer', border: '1.5px solid #e2d6c2', background: '#fff', color: '#8a8499' }}>예약 취소</button></div>
+      )}
+    </div>
+  );
+}
+
 export function AssistantPanel({ ai, me, onClose }) {
   const listRef = useRef(null);
   const count = ai.msgs.length + (ai.busy ? 1 : 0);
@@ -413,6 +709,7 @@ export function AssistantPanel({ ai, me, onClose }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [count]);
   const canSend = !!ai.input.trim() && !ai.busy;
+  const taskBadge = ai.demo ? ai.taskCount : ai.remoteTasks.filter(r => r.state === 'queued' || r.state === 'running').length;
 
   return (
     <div className="ai-panel" style={{ position: 'fixed', right: 12, top: 74, bottom: 12, width: 396, maxWidth: 'calc(100vw - 24px)', zIndex: 150, background: '#fbf7ef', borderRadius: 18, boxShadow: '0 0 0 2px #2b2d55,0 24px 50px -16px rgba(23,24,58,.6)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -429,7 +726,7 @@ export function AssistantPanel({ ai, me, onClose }) {
       <div style={{ padding: '10px 12px 0' }}>
         <span style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', background: '#efe6d5', borderRadius: 10, padding: 3 }}>
           <button onClick={() => ai.setTab('chat')} style={SEG(ai.tab === 'chat')}>대화</button>
-          <button onClick={() => ai.setTab('tasks')} style={SEG(ai.tab === 'tasks')}>예약 작업 {ai.taskCount || ''}</button>
+          <button onClick={() => ai.setTab('tasks')} style={SEG(ai.tab === 'tasks')}>예약 작업 {taskBadge || ''}</button>
         </span>
       </div>
       {ai.tab === 'chat' ? (
@@ -466,6 +763,14 @@ export function AssistantPanel({ ai, me, onClose }) {
                       onCancel={() => { ai.updPlan(m.id, { state: 'cancelled' }); ai.pushBot('취소했어요. 다른 도움이 필요하면 말씀해 주세요.'); }}
                     />
                   )}
+                  {m.server && (
+                    <ServerPlanCard
+                      server={m.server}
+                      onConfirm={() => ai.confirmServer(m.id)}
+                      onRevise={text => ai.reviseServer(m.id, text)}
+                      onCancel={() => ai.cancelServer(m.id)}
+                    />
+                  )}
                 </div>
               </div>
             )))}
@@ -494,7 +799,7 @@ export function AssistantPanel({ ai, me, onClose }) {
             </button>
           </div>
         </>
-      ) : (
+      ) : ai.demo ? (
         <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
           {!ai.tasks.length && (
             <div style={{ padding: '30px 16px', textAlign: 'center', fontSize: 13.5, lineHeight: 1.65, color: '#8a8499' }}>
@@ -519,6 +824,24 @@ export function AssistantPanel({ ai, me, onClose }) {
               </div>
             );
           })}
+        </div>
+      ) : (
+        <div style={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <b style={{ flex: 1, fontSize: 13.5, color: '#2b2d55' }}>서버 예약 내역</b>
+            <button onClick={ai.refreshReservations} style={{ height: 28, padding: '0 10px', borderRadius: 8, border: '1.5px solid #e2d6c2', background: '#fff', fontSize: 12.5, fontWeight: 700, color: '#5d5870', cursor: 'pointer' }}>새로고침</button>
+          </div>
+          {ai.remoteLoading && !ai.remoteTasks.length && (
+            <div style={{ padding: '30px 16px', textAlign: 'center', fontSize: 13.5, color: '#8a8499' }}>예약 내역을 불러오는 중이에요…</div>
+          )}
+          {!ai.remoteLoading && !ai.remoteTasks.length && (
+            <div style={{ padding: '30px 16px', textAlign: 'center', fontSize: 13.5, lineHeight: 1.65, color: '#8a8499' }}>
+              아직 예약이 없어요.<br />대화에서 "3시에 회의 있어"처럼 말하면<br />서버가 초안을 만들어 드려요.
+            </div>
+          )}
+          {ai.remoteTasks.map(item => (
+            <RemoteTaskCard key={item.id} item={item} onCancel={ai.cancelReservation} />
+          ))}
         </div>
       )}
     </div>

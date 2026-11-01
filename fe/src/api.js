@@ -53,6 +53,28 @@ const BUSINESS_MESSAGES = {
   LINK_ALREADY_BOUND: '이미 다른 계정에 연결된 링크예요. 관리자에게 문의해 주세요.',
 };
 
+// LLM 예약 비서(sensory-assistant Edge Function) 오류 코드 -> 사용자 안내.
+const ASSISTANT_MESSAGES = {
+  AUTH_REQUIRED: '로그인 세션이 만료됐어요. 다시 로그인해 주세요.',
+  ASSISTANT_MEMBERSHIP_REQUIRED: '회사 직원 연결이 끝난 계정에서만 비서를 쓸 수 있어요.',
+  ORIGIN_NOT_ALLOWED: '이 주소에서는 비서를 사용할 수 없어요. 관리자에게 문의해 주세요.',
+  ASSISTANT_VERSION_CONFLICT: '초안이 다른 곳에서 수정됐어요. 최신 내용으로 다시 확인해 주세요.',
+  ASSISTANT_DRAFT_EXPIRED: '초안 유효 시간이 지났어요. 다시 요청해 주세요.',
+  ASSISTANT_INVALID_TIME: '시간을 다시 확인해 주세요.',
+  ASSISTANT_OVERLAP: '이미 예약된 시간과 겹쳐요. 다른 시간으로 수정해 주세요.',
+  ASSISTANT_EMPLOYEE_OFF_WORK: '지금은 퇴근 상태예요. 직접 출근한 뒤 다시 요청해 주세요.',
+  ASSISTANT_RETURN_REQUIRED: '임시 이동 중이에요. 복귀한 뒤 다시 요청해 주세요.',
+  ASSISTANT_RATE_LIMITED: '요청이 너무 잦아요. 잠시 뒤 다시 시도해 주세요.',
+  LLM_NOT_CONFIGURED: '비서 서버 설정이 끝나지 않았어요. 관리자에게 알려 주세요.',
+  BACKEND_NOT_CONFIGURED: '비서 서버 설정이 끝나지 않았어요. 관리자에게 알려 주세요.',
+  LLM_UNAVAILABLE: 'AI 해석을 지금 할 수 없어요. 잠시 뒤 다시 시도해 주세요.',
+  UPSTREAM_UNAVAILABLE: 'AI 해석을 지금 할 수 없어요. 잠시 뒤 다시 시도해 주세요.',
+  LLM_INVALID_OUTPUT: 'AI 답변을 이해하지 못했어요. 조금 다르게 다시 말씀해 주세요.',
+  LLM_MODEL_NOT_AVAILABLE: 'AI 모델 연결을 확인해야 해요. 관리자에게 알려 주세요.',
+  CONFIRMATION_REQUIRED: '확인 정보가 올바르지 않아요. 초안을 다시 확인해 주세요.',
+  NOT_FOUND: '초안이나 예약을 찾을 수 없어요.',
+};
+
 function linkMessage(data) {
   return BUSINESS_MESSAGES[data?.error_code] || '초대 링크를 사용할 수 없어요. 링크를 확인해 주세요.';
 }
@@ -584,6 +606,25 @@ function createSupabaseAdapter() {
       if (error) throw new Error(businessMessage(error));
       return api.me();
     },
+
+    // LLM 예약 비서. 로그인 세션으로 Edge Function을 호출하고,
+    // 초안/예약 확인은 모두 서버가 검증한다. FE는 확인 UI만 담당한다.
+    async assistant(body) {
+      const { data, error } = await supabase.functions.invoke('sensory-assistant', { body });
+      if (error) {
+        let payload = null;
+        try { payload = await error.context?.json?.(); } catch { /* 게이트웨이/CORS 오류는 JSON body가 없을 수 있다 */ }
+        const code = payload?.error_code || '';
+        const failure = new Error(ASSISTANT_MESSAGES[code]
+          || (payload ? '비서 요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.'
+            : '비서 서버에 연결하지 못했어요. 네트워크를 확인해 주세요.'));
+        failure.code = code || 'NETWORK';
+        failure.draftId = payload?.draft_id || null;
+        failure.version = payload?.version || null;
+        throw failure;
+      }
+      return data;
+    },
   };
   return api;
 }
@@ -640,5 +681,7 @@ export function createApi() {
     awayNote: value => (useLocal() ? local.awayNote(value) : remote.awayNote(value)),
     message: (value, icon) => (useLocal() ? local.message(value, icon) : remote.message(value, icon)),
     senses: values => (useLocal() ? local.senses(values) : remote.senses(values)),
+    // 데모 모드는 서버 세션이 없으므로 null을 돌려주고, 비서 화면이 로컬 안내로 대체한다.
+    assistant: body => (useLocal() ? Promise.resolve(null) : remote.assistant(body)),
   };
 }

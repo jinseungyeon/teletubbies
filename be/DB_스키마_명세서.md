@@ -7,7 +7,7 @@
 작성일: 2026-10-31
 
 상태: P1 전체 설계 및 초기화 SQL 작성 완료. PostgreSQL 17에서 설치·권한·동시성 검증 완료. 실제 Supabase 프로젝트 적용 및 Auth·Storage HTTP 통합 검증 전이다.
-기준 문서: [기존 검토 문서](./SenseSpace_P1_검토완료_설계문서.md). 이후 대화에서 확정한 사항은 아래에 기록한다.
+기준 문서: 기존 검토 문서(문서 정리로 삭제). 이후 대화에서 확정한 사항은 아래에 기록한다.
 
 ## 1. 대화에서 확정한 사항
 
@@ -267,6 +267,6 @@ erDiagram
 
 캐릭터는 본인 RPC만 수정, 같은 회사 직원은 조회한다. 카탈로그는 운영자만 변경하고 기존 항목은 삭제보다 비활성화해 렌더링 정보를 유지한다. 팀은 소속 회사만 조회하고 알림은 본인만 조회·읽음 처리한다. 카탈로그·팀·알림 직접 변경은 일반 직원에게 허용하지 않는다.
 
-005의 항목 52개는 실제 character.js에서 생성했다. 그림은 FE의 SVG 코드에 있으므로 asset_path는 NULL이고 metadata에 FE 인덱스와 색상 등이 있다. gender는 그림 실루엣 선택이다. 독립 이모티콘의 퇴근 중 변경/유지와 본인 좌석 변경 알림은 구현 기본안이며 사용자 추가 결정과 구별한다. 세부 API·적용 순서·검증은 [FE 코드 연동 검토](./FE_코드_연동_검토.md)를 따른다.
+005의 항목 52개는 실제 character.js에서 생성했다. 그림은 FE의 SVG 코드에 있으므로 asset_path는 NULL이고 metadata에 FE 인덱스와 색상 등이 있다. gender는 그림 실루엣 선택이다. 독립 이모티콘의 퇴근 중 변경/유지와 본인 좌석 변경 알림은 구현 기본안이며 사용자 추가 결정과 구별한다. 세부 API·적용 순서·검증은 FE 코드 연동 검토(문서 정리로 삭제)를 따른다.
 
 공식 근거: [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [함수 권한](https://supabase.com/docs/guides/database/functions), [Storage 권한](https://supabase.com/docs/guides/storage/security/access-control).

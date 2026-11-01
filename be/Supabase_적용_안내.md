@@ -95,7 +95,7 @@ API 호출 형식은 [API 명세서](./API_명세서.md)를 따른다. 특히 jo
 
 ## 8. 검증 근거
 
-[검토 결과](./설계_검토_결과.md)에 요구사항 대조와 실행 범위를 기록했다. 공식 근거: [Supabase 함수 권한](https://supabase.com/docs/guides/database/functions), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Storage 권한](https://supabase.com/docs/guides/storage/security/access-control).
+검토 결과(문서 정리로 삭제)에 요구사항 대조와 실행 범위를 기록했다. 공식 근거: [Supabase 함수 권한](https://supabase.com/docs/guides/database/functions), [RLS](https://supabase.com/docs/guides/database/postgres/row-level-security), [Storage 권한](https://supabase.com/docs/guides/storage/security/access-control).
 
 ## 9. 004·005 실행 전후
 

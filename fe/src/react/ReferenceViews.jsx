@@ -114,6 +114,11 @@ export class MapView extends ReferenceView {
             <button onClick={v.startSelect} style={{ height: 38, padding: '0 13px', borderRadius: 11, border: 'none', background: '#fbf7ef', cursor: 'pointer', fontSize: 13, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 0 0 1.5px #3a3c63,0 4px 0 rgba(23,24,58,.35)' }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeDasharray="3 3"><rect x="4" y="4" width="16" height="16" rx="2" /></svg>팀 영역 설정
             </button>
+            {v.hasTeam && !v.selecting && (
+              <button onClick={v.clearTeam} style={v.clearTeamStyle} title="내 팀 영역 설정 해제">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>설정 해제
+              </button>
+            )}
             {v.inRoomView && (
               <span style={{ display: 'flex', alignItems: 'center', gap: 8, height: 38, padding: '0 5px 0 12px', borderRadius: 11, background: '#2b2d55', color: '#fff', fontSize: 13, fontWeight: 700, boxShadow: '0 0 0 1.5px #3a3c63,0 4px 0 rgba(23,24,58,.35)', whiteSpace: 'nowrap' }}>
                 {v.roomCrumb}

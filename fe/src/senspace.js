@@ -105,6 +105,7 @@ const QUICK = [
 const WORK = [['focus', '집중 근무 중'], ['meeting', '회의 중'], ['heart', '디자인 작업 중'], ['eye', '리뷰 중'], ['phone', '통화 중'], ['help', '교육 중']];
 const REASONS = { meal: { label: '식사', icon: 'lunch', long: '식사하러 갔어요' }, meeting: { label: '회의', icon: 'meeting', long: '회의에 들어갔어요' }, outside: { label: '외근', icon: 'outside', long: '외근 중이에요' }, short: { label: '잠깐 자리 비움', icon: 'away', long: '잠깐 자리를 비웠어요' }, personal: { label: '개인 용무', icon: 'rest', long: '개인 용무 중이에요' }, home: { label: '재택', icon: 'off', long: '오늘은 재택이에요' } };
 const LV = ['', '#5aa9e0', '#7cc5a0', '#f0c04a', '#f08a3c', '#e5534b'];
+const TEAM_DEFAULT = { x: 360, y: 330, w: 560, h: 420 };
 const sn = (noise, temp, humid, smell, lighting, crowd) => ({ noise, temp, humid, smell, lighting, crowd });
 const P = (id, name, role, seat, team, status, extra, cfg, senses, sensi, desc) => ({ id, name, role, seat, team, status, reason: null, since: '09:10', task: '', msg: '', msgIcon: null, alert: false, ...extra, cfg, senses, sensi: sensi || { visual: 3, audio: 3, smell: 3 }, desc: desc || '' });
 const P0 = [
@@ -174,7 +175,7 @@ class Component extends DCLogic {
     this.mode = (props && props.mode) || SESSION.mode || '';
   }
   state = { ready: !!(window.SP && window.SP.ready), screen: SESSION.current ? (SESSION.current.complete?'space':'welcome') : 'auth', authMode:location.pathname==='/signup'?'signup':'login', authError:'', authBusy:false, awayOpen:false, awayDraft:'', people: initialPeople(), modal: null, cardId: null, ed: null, menu: false, listScope: 'team', q: '', mini: null,
-    vw: 900, vh: 520, view: 'all', zm: 1, panX: 0, panY: 0, full: false, pop: null, selecting: false, selRect: null, team: { x: 360, y: 330, w: 560, h: 420 },
+    vw: 900, vh: 520, view: 'all', zm: 1, panX: 0, panY: 0, full: false, pop: null, selecting: false, selRect: null, team: { ...TEAM_DEFAULT }, teamSet: false,
     spaceId: null, zoomRoom: null, upd: {},
     pickSeat: false, seatMode: 'move', seatDraft: null, toast: null, job: SESSION.current?.role||'프로덕트 디자이너', rank: '팀원',
     notif: { master: true, items: { sense: true, meetup: true, help: true, attend: false, back: false, space: false }, scope: 'team', quiet: true }, perm: typeof Notification !== 'undefined' ? Notification.permission : 'unsupported' };
@@ -193,7 +194,7 @@ class Component extends DCLogic {
       if(this.mode==='settings'){this.openSettings();this._opened=true;}
       if(this.props&&this.props.onReady)this.props.onReady();
     }
-    try { const t = JSON.parse(localStorage.getItem(EMBEDDED?'senspace.team.'+SESSION.floor:'senspace.team') || 'null'); if(t&&[t.x,t.y,t.w,t.h].every(Number.isFinite)&&t.x>=0&&t.y>=0&&t.w>=60&&t.h>=60&&t.x+t.w<=MW&&t.y+t.h<=MH)this.setState({team:t}); const n = JSON.parse(localStorage.getItem('senspace.notif') || 'null'); if(n&&typeof n.master==='boolean'&&n.items&&['team','floor','fav'].includes(n.scope))this.setState({notif:{...this.state.notif,...n,items:{...this.state.notif.items,...n.items}}}); } catch (e) {}
+    try { const t = JSON.parse(localStorage.getItem(EMBEDDED?'senspace.team.'+SESSION.floor:'senspace.team') || 'null'); if(t&&[t.x,t.y,t.w,t.h].every(Number.isFinite)&&t.x>=0&&t.y>=0&&t.w>=60&&t.h>=60&&t.x+t.w<=MW&&t.y+t.h<=MH)this.setState({team:t, teamSet:true}); const n = JSON.parse(localStorage.getItem('senspace.notif') || 'null'); if(n&&typeof n.master==='boolean'&&n.items&&['team','floor','fav'].includes(n.scope))this.setState({notif:{...this.state.notif,...n,items:{...this.state.notif.items,...n.items}}}); } catch (e) {}
     if (!this.state.ready) this._t = setInterval(() => { if (window.SP && window.SP.ready) { clearInterval(this._t); this.setState({ ready: true }); } }, 40);
     this.attach();
   }
@@ -209,6 +210,12 @@ class Component extends DCLogic {
   startPickSeat(mode='move'){this.setState({pickSeat:true,seatMode:mode,seatDraft:null,pop:null,spaceId:null,zoomRoom:null,view:'all',zm:1,panX:0,panY:0});}
   openRoom(id){const rm=ROOM[id];if(!rm)return;this.setState({spaceId:id,zoomRoom:id,view:'room',zm:1,panX:0,panY:0,pop:null});}
   closeRoom(){this.setState({spaceId:null,zoomRoom:null,view:'all',zm:1,panX:0,panY:0});}
+  // 내 팀 영역 설정을 지우고, 기본 영역·전체 보기로 되돌린다.
+  clearTeam(){
+    try { localStorage.removeItem(EMBEDDED?'senspace.team.'+SESSION.floor:'senspace.team'); } catch (e) {}
+    this.setState({team:{...TEAM_DEFAULT},teamSet:false,selecting:false,selRect:null,view:'all',zm:1,panX:0,panY:0});
+    this.showToast('내 팀 영역 설정을 해제했어요');
+  }
   startMoveSeat(){this.setState({pickSeat:true,seatMode:'move',seatDraft:null,pop:null,spaceId:null,zoomRoom:null,view:'all',zm:1,panX:0,panY:0,selecting:false});}
   async goSpace(id){const reason=ROOM_REASON_LABEL[id];if(!reason)return this.showToast('이 공간은 지금 이동할 수 없어요.');try{await SESSION.api.status('away',reason);this.emit('saved',{kind:'space',id});this.showToast(ROOM[id].name+'(으)로 이동했어요');}catch(error){this.showToast(error.message);}}
   async returnSeat(){try{await SESSION.api.status('working');this.emit('saved',{kind:'space'});this.showToast('내 자리로 복귀했어요');}catch(error){this.showToast(error.message);}}
@@ -537,7 +544,9 @@ class Component extends DCLogic {
       selDown: e => { e.stopPropagation(); this._sel = toMap(e); e.currentTarget.setPointerCapture && e.currentTarget.setPointerCapture(e.pointerId); set({ selRect: { x: this._sel.x, y: this._sel.y, w: 0, h: 0 } }); },
       selMove: e => { if (!this._sel) return; const p = toMap(e), a = this._sel; set({ selRect: { x: Math.min(a.x, p.x), y: Math.min(a.y, p.y), w: Math.abs(p.x - a.x), h: Math.abs(p.y - a.y) } }); },
       selUp: () => { this._sel = null; },
-      saveTeam: () => { const r = s.selRect; if (!r || r.w < 60 || r.h < 60) return this.showToast('조금 더 크게 드래그해 주세요'); try { localStorage.setItem(EMBEDDED?'senspace.team.'+SESSION.floor:'senspace.team', JSON.stringify(r)); } catch (e) {} set({ team: r, selecting: false, selRect: null, view: 'team', zm: 1, panX: 0, panY: 0 }); this.showToast('내 팀 영역을 저장했어요'); },
+      saveTeam: () => { const r = s.selRect; if (!r || r.w < 60 || r.h < 60) return this.showToast('조금 더 크게 드래그해 주세요'); try { localStorage.setItem(EMBEDDED?'senspace.team.'+SESSION.floor:'senspace.team', JSON.stringify(r)); } catch (e) {} set({ team: r, teamSet: true, selecting: false, selRect: null, view: 'team', zm: 1, panX: 0, panY: 0 }); this.showToast('내 팀 영역을 저장했어요'); },
+      hasTeam: s.teamSet, clearTeam: () => this.clearTeam(),
+      clearTeamStyle: { height: 38, padding: '0 12px', borderRadius: 11, border: 'none', background: '#fbf7ef', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: '#6e6a84', display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 0 0 1.5px #3a3c63,0 4px 0 rgba(23,24,58,.35)' },
       saveTeamStyle: { height: 36, padding: '0 14px', borderRadius: 10, border: '1.5px solid #5d6594', background: s.selRect && s.selRect.w > 60 ? '#dbddea' : '#c5c9dc', color: '#2f3563', fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: 'inset 0 -3px 0 #c5c9dc' },
       selecting: s.selecting,
       zoomIn: () => set({ zm: Math.min(4, s.zm * 1.25) }), zoomOut: () => set({ zm: Math.max(0.7, s.zm / 1.25) }), zoomFit: () => set({ zm: 1, panX: 0, panY: 0 }), zoomLabel: Math.round(s.zm * 100) + '%',

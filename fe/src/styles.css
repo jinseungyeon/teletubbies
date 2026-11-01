@@ -643,3 +643,21 @@
 .ai-dot:nth-child(2){animation-delay:.2s}
 .ai-dot:nth-child(3){animation-delay:.4s}
 @keyframes aiTwinkle{0%,100%{opacity:.35}50%{opacity:1}}
+
+/* ── 좁은 화면: 지도 도구 버튼이 sticky 헤더 위로 올라오지 않게 ── */
+@media(max-width:1100px){
+  .hub-top{z-index:40}
+  .hub-profile-head{flex-wrap:wrap}
+  .hub-profile-head>.hub-profile-actions{width:100%;margin-left:0}
+  .hub-profile-actions button{width:100%}
+  .hub-profile h2{font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .hub-profile p{font-size:12.5px}
+}
+/* 감각 카드: '현재 내 감각 상태'와 '빠른 상태 설정'이 서로 겹치지 않게 한 줄로 쌓는다 */
+@media(max-width:1000px){
+  .hub-info .hub-info-grid{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .hub-bottom{grid-template-columns:1fr}
+  .hub-profile h2{font-size:16px}
+}

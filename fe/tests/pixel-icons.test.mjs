@@ -42,7 +42,7 @@ test('recolouring swaps palette keys and output stays crisp', () => {
 
 test('design PNG icons exist, match their recorded size and scale by whole pixels', () => {
   for (const [name, [w, h]] of Object.entries(IMAGE_ICONS)) {
-    const png = readFileSync(new URL(`../src/icons/${name}.png`, import.meta.url));
+    const png = readFileSync(new URL(`../public/icons/${name}.png`, import.meta.url));
     assert.equal(png.readUInt32BE(16), w, name);
     assert.equal(png.readUInt32BE(20), h, name);
   }

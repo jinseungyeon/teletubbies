@@ -107,5 +107,5 @@ export function iconHTML(name, size = 20) {
   const img = IMAGE_ICONS[name];
   if (!img) return pixelIconSVG(name, size >= 24 ? 32 : 16);
   const k = size >= 24 ? 2 : 1;
-  return `<img class="px-icon px-img" src="/src/icons/${name}.png" width="${img[0] * k}" height="${img[1] * k}" alt="" aria-hidden="true" draggable="false">`;
+  return `<img class="px-icon px-img" src="/icons/${name}.png" width="${img[0] * k}" height="${img[1] * k}" alt="" aria-hidden="true" draggable="false">`;
 }

@@ -1,6 +1,6 @@
 
 const BLANK = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-const R = p => (window.__resources && window.__resources[p.replace(/[^a-z0-9]/gi, '_')]) || ('/src/' + p);
+const R = p => (window.__resources && window.__resources[p.replace(/[^a-z0-9]/gi, '_')]) || ('/' + p);
 const IC = k => R('assets/icons/' + k + '.png');
 const MW = 1400, MH = 800;
 const FS = { workdesk: [56, 36], workdesk_b: [56, 36], chair: [14, 16], chair_b: [14, 16], mtable_long: [40, 164], mchair_l: [16, 18], mchair_r: [16, 18], pillar_table: [30, 34], front_desk: [34, 128], wall_tv: [36, 24], water_cooler: [14, 32], plant_small: [14, 18], table_round: [22, 24], stool: [14, 14] };

@@ -16,8 +16,8 @@ export function MapBase({ floor }) {
   }
   return (
     <>
-      <div style={{ position: 'absolute', left: 344, top: 100, width: 984, height: 644, background: "url('/src/assets/tiles/marble.png') 0 0/128px 128px", imageRendering: 'pixelated' }} />
-      <div style={{ position: 'absolute', left: 64, top: 214, width: 280, height: 530, background: "url('/src/assets/tiles/marble.png') 64px 0/128px 128px", imageRendering: 'pixelated' }} />
+      <div style={{ position: 'absolute', left: 344, top: 100, width: 984, height: 644, background: "url('/assets/tiles/marble.png') 0 0/128px 128px", imageRendering: 'pixelated' }} />
+      <div style={{ position: 'absolute', left: 64, top: 214, width: 280, height: 530, background: "url('/assets/tiles/marble.png') 64px 0/128px 128px", imageRendering: 'pixelated' }} />
       <div style={{ position: 'absolute', left: 344, top: 36, width: 984, height: 28, background: 'repeating-linear-gradient(90deg,#9fd4ee 0 118px,#6e7190 118px 123px)', border: '2px solid #2e2433', boxSizing: 'border-box', boxShadow: 'inset 0 3px 0 #d6f0fb' }} />
       <div style={{ position: 'absolute', left: 344, top: 62, width: 984, height: 38, background: '#f6f0e4', border: '2px solid #2e2433', borderTop: 'none', boxSizing: 'border-box', boxShadow: 'inset 0 -5px 0 #e2d8c4,0 4px 0 rgba(46,36,51,.12)' }} />
       <div style={{ position: 'absolute', left: 316, top: 36, width: 30, height: 180, background: '#efe6d6', border: '2px solid #2e2433', boxSizing: 'border-box', boxShadow: 'inset -4px 0 0 #e0d4bf' }} />

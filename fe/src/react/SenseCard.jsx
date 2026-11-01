@@ -16,7 +16,7 @@ const SENSES = [
   { key: 'lighting', label: '조명 지수', icon: 'sun', color: '#c9a44c', lo: '어두움', hi: '밝음' },
   { key: 'crowding', label: '혼잡도', icon: 'crowd', color: '#4a4e72', lo: '여유', hi: '붐빔' },
 ];
-const pngIcon = (name, h, w) => <img src={`/src/icons/${name}.png`} alt="" aria-hidden="true" style={{ height: h, width: w, objectFit: 'contain', imageRendering: 'pixelated' }} />;
+const pngIcon = (name, h, w) => <img src={`/icons/${name}.png`} alt="" aria-hidden="true" style={{ height: h, width: w, objectFit: 'contain', imageRendering: 'pixelated' }} />;
 
 export default function SenseCard({ user, me, api, refresh, toast, onClose, onEditCharacter }) {
   const own = user.id === me.id;
